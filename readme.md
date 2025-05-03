@@ -4,7 +4,9 @@
     <img  alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="./assets/logo-light.svg">
     </picture>
 </p>
-A truly native mobile focused UI-framework for iOS and android. Many current ui-frameworks in Rust are nothing more than 
+A truly native mobile focused UI-framework for iOS and android. Many current ui-frameworks in Rust do nothing more than rendering to a window's graphics context (like what games do). Instead Rust-ui uses the native ui-system of the current platform. This allows niche integrations, better accessibility support, interoperability with native ui components (like a tab/side bar) and much more!
+
+
 
 # Examples
 ## Hello World
@@ -122,7 +124,10 @@ struct MainView {
                 Input(binding!(text_input)),
                 Button("add item") || {
                     items.push(text_input);
-                    text_input.drain();
+                    text_input.clear();
+                }
+                for item in items.iter() {
+                    Text(item)
                 }
             }
             
@@ -142,3 +147,23 @@ fn main(){
 }
 ```
 So why not write this function yourself? You can, but again you might shoot yourself in the foot. The main function should initialize the application and register it to the os as fast as possible, doing any form of initialization is strongly discouraged, instead use a `.task {}` hook. Also your application might want to support more than just a main view. Think of a preview provider or home-screen widget. Whilst these aren't supported by the current project, these would be implement using `#ui(widget)` or similar
+
+
+---
+
+<table>
+<tr>
+<td>
+<img src="https://nlnet.nl/logo/banner.svg" width="300">
+</td>
+<td>
+<img src="https://nlnet.nl/image/logos/NGI0Core_tag.svg" width="300">
+</td>
+<td>
+<img src="https://research-and-innovation.ec.europa.eu/themes/contrib/oe_theme/dist/ec/images/logo/positive/logo-ec--en.svg" width="300">
+</td>
+</tr>
+</table>
+
+
+This project was funded through the [NGI0 Commons Fund](https://nlnet.nl/commonsfund), a fund established by [NLnet](https://nlnet.nl/) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu/) programme, under the aegis of [DG Communications Networks, Content and Technology](https://commission.europa.eu/about-european-commission/departments-and-executive-agencies/communications-networks-content-and-technology_en) under grant agreement No [101135429](https://cordis.europa.eu/project/id/101135429). Additional funding is made available by the [Swiss State Secretariat for Education, Research and Innovation](https://www.sbfi.admin.ch/sbfi/en/home.html) (SERI).
