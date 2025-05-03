@@ -6,17 +6,18 @@
     </picture>
 </p>
 A truly native mobile focused UI-framework for iOS and android. Many current ui-frameworks in Rust do nothing more than rendering to a window's graphics context (like what games do). Instead Rust-ui uses the native ui-system of the current platform. This allows niche integrations, better accessibility support, interoperability with native ui components (like a tab/side bar) and much more!
+---
 
 # features
 ## platforms
 | | iOS | macOS | android |
 |-|-----|-------|---------|
-|build|:check_mark_button:|:check_mark_button:|:construction:|
+|build|✅|✅|:construction:|
 |target|aarch64-apple-ios <br> aarch64-apple-ios-sim <br>x86_64-apple-ios | x86_64-apple-darwin <br> aarch64-apple-darwin | t.b.d.
 
 <details>
 <table>
-<tr><td>:check_mark_button:</td><td>complete 100%</td></tr>
+<tr><td>✅</td><td>complete 100%</td></tr>
 <tr><td>:construction:</td><td>Planned</td></tr>
 </table>
 <summary>
@@ -26,11 +27,10 @@ A truly native mobile focused UI-framework for iOS and android. Many current ui-
 
 
 # Getting started
-Create a new rust project using `cargo init` (or your preferred initialization method). Next add the rust-ui package `cargo add kz-rust-ui`
-
-> [!important]
+Create a new rust project using `cargo init` (or your preferred initialization method). Next add the rust-ui package `cargo add kz-rust-ui`, and then copy the hello world example to the `main.rs` file. Your project is ready, now you can build an run. Enjoy!
+> [!IMPORTANT]
 > The package is called `kz-rust-ui` for the time being (this will change in the future). **However within Rust it is named `rust-ui`**. That means that in your cargo.toml you'll see a line like `kz-rust-ui = "0.1"` but in your rust code you have something along the lines of `use rust-ui::prelude::*;` 
-## building
+## building / crosscompilation
 Depending on platform the build process might look different. In all cases a simple `cargo run` will work if your targeting your own device.
 
 ### macOS
@@ -58,7 +58,7 @@ cargo bundle --target "insert target here"
 xcrun simctl install booted "path/to/created.app"
 ```
 Note that this does require xcode to be installed with iOS build support. 
-> [!info]
+> [!NOTE]
 > You may have to set the identifier in your Cargo.toml's `package.metadata.bundle`
 #### On device testing (cross platform)
 Building and then running on a iPhone can be done from any device. Currently it does require you to be enrolled in the apple developer program (unless you have a look at _Frankenstein with XCode_). First build the application using
@@ -79,7 +79,7 @@ ideviceinstaller install "path/to/bundle.app"
 
 
 
-> [!info]
+> [!TIP]
 > You may need create a `.ipa` file this is just a zipped folder named `Payload` containing your .app bundle. If everything is correct your payload.ipa should look like: 
 > ```
 > payload.ipa •  •  •  • (zip archive)
@@ -89,7 +89,7 @@ ideviceinstaller install "path/to/bundle.app"
 > | |-YourApp.app   •  • (application bundle)
 > ```
 
-> [!caution]
+> [!CAUTION]
 > Whilst running your app on a device you will not have access to stdin, stdout and stderr. That also means you will not get stack traces if your app crashes. _(We are working on proper crash logs with rust stack traces, but it isn't here yet)_. If you would like this information try using [libimobiledevice](https://libimobiledevice.org/) to mount a developer disk image to your device and then run the app. This however has become a bit more involved in newer versions of iOS. If you don't want to go through that trouble you may have a look at _Frankenstein with XCode_ as XCode automatically attached the proper ddi.
 
 #### Frankenstein with XCode
