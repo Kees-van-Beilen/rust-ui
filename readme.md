@@ -1,11 +1,12 @@
 
 <p align="center">
     <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.svg">
-    <img  alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="./assets/logo-light.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg">
+    <img  alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="https://inpolen.nl/profiles/rust-ui/public/assets/logo-light.svg">
     </picture>
 </p>
 A truly native mobile focused UI-framework for iOS and android. Many current ui-frameworks in Rust do nothing more than rendering to a window's graphics context (like what games do). Instead Rust-ui uses the native ui-system of the current platform. This allows niche integrations, better accessibility support, interoperability with native ui components (like a tab/side bar) and much more!
+
 ---
 
 # features
@@ -36,8 +37,8 @@ Depending on platform the build process might look different. In all cases a sim
 ### macOS
 A basic macos executable can be obtained using `cargo build`. You may also specify a target architecture.
 <table>
-<tr><td>`--target x86_64-apple-darwin`</td><td>binary for intel macs</td></tr>
-<tr><td>`--target aarch64-apple-darwin`</td><td>binary for apple silicon (M1/M2/M3 etc)</td></tr>
+<tr><td> `--target x86_64-apple-darwin` </td><td>binary for intel macs</td></tr>
+<tr><td> `--target aarch64-apple-darwin` </td><td>binary for apple silicon (M1/M2/M3 etc)</td></tr>
 </table>
 
 You may also bundle the application using [cargo-bundle](https://crates.io/crates/cargo-bundle) and then code sign using [apple-codesign](https://gregoryszorc.com/docs/apple-codesign/0.17.0/apple_codesign.html) If done properly the application should be AppStore ready. _Building, bundling and signing does not require apple hardware_
@@ -186,7 +187,7 @@ struct MainView {
     }
 }
 ```
-## Hide/sho
+## Hide/show
 ```rs 
 //main.rs
 use rust_ui::prelude::*;
@@ -241,13 +242,15 @@ struct MainView {
 # The necessary evil
 First why the weird macro syntax? This is done to abstract away some very verbose syntax. Besides that it is also there to make sure people don't shoot themselves in the foot. For instance the `body = {...}`, which compiles down to a function, makes sure you only do UI related initialization (you still can do some funky stuff but it is a lot harder now). 
 
+You may also notice that fields marked with `#[state]` almost always have a default initializer. Instead of of rust builtin default trait rust-ui
+
 Next why no main function? In this library you should have one view in the `main.rs` file with the tag `#[ui(main)]` as opposed to just the `#[ui]` tag. This automatically adds a main function that looks similar to this:
 ```rs
 fn main(){
     rust_ui::native::launch_application_with_view(MyMainView::new())
 }
 ```
-So why not write this function yourself? You can, but again you might shoot yourself in the foot. The main function should initialize the application and register it to the os as fast as possible, doing any form of initialization is strongly discouraged, instead use a `.task {}` hook. Also your application might want to support more than just a main view. Think of a preview provider or home-screen widget. Whilst these aren't supported by the current project, these would be implement using `#ui(widget)` or similar
+So why not write this function yourself? You can, but again you might shoot yourself in the foot. The main function should initialize the application and register it to the os as fast as possible, doing any form of initialization is strongly discouraged, instead use a `.task {}` hook. Also your application might want to support more than just a main view. Think of a preview provider or home-screen widget. Whilst these aren't supported by the current project, these would be implement using `#[ui(widget)]` or similar
 
 
 ---

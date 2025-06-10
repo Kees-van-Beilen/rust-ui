@@ -14,7 +14,8 @@ use objc2_foundation::{
     ns_string,
 };
 
-use crate::layout::{ComputableLayout, RenderObject, Size};
+use crate::layout::{ComputableLayout, Position, RenderObject, Size};
+use crate::view::resources::Resources;
 
 #[derive(Default)]
 pub struct AppDelegateIvars {
@@ -127,8 +128,11 @@ impl Delegate {
     {
         let window = self.ivars().window.get().unwrap();
         let view = window.contentView().unwrap();
-        let root: Box<dyn ComputableLayout> =
-            Box::new(object.render(super::native::RenderData { real_parent: view }));
+        let root_res = Resources::default();
+        let root: Box<dyn ComputableLayout> = Box::new(object.render(super::native::RenderData {
+            real_parent: view,
+            stack: crate::view::resources::ResourceStack::Owned(root_res),
+        }));
         self.ivars().root.replace(Some(root));
     }
     pub fn resize(&self) {
@@ -139,5 +143,6 @@ impl Delegate {
         let mut k = self.ivars().root.borrow_mut();
         let b = k.as_mut().unwrap();
         b.set_size(size);
+        b.set_position(Position { x: 0.0, y: 0.0 });
     }
 }

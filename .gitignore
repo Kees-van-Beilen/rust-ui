@@ -1,3 +1,10 @@
 /target
 /old
+.*
+
+# local development
 /design.md
+*.cer
+*.mobileprovision
+*.plist
+*.pem
