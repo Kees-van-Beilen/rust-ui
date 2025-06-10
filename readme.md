@@ -9,12 +9,13 @@ A truly native mobile focused UI-framework for iOS and android. Many current ui-
 
 ---
 
-# features
-## platforms
+# Features
+## Platforms
 | | iOS | macOS | android |
 |-|-----|-------|---------|
 |build|✅|✅|:construction:|
 |target|aarch64-apple-ios <br> aarch64-apple-ios-sim <br>x86_64-apple-ios | x86_64-apple-darwin <br> aarch64-apple-darwin | t.b.d.
+## 
 
 <details>
 <table>
@@ -30,9 +31,13 @@ A truly native mobile focused UI-framework for iOS and android. Many current ui-
 # Getting started
 Create a new rust project using `cargo init` (or your preferred initialization method). Next add the rust-ui package `cargo add kz-rust-ui`, and then copy the hello world example to the `main.rs` file. Your project is ready, now you can build an run. Enjoy!
 > [!IMPORTANT]
-> The package is called `kz-rust-ui` for the time being (this will change in the future). **However within Rust it is named `rust-ui`**. That means that in your cargo.toml you'll see a line like `kz-rust-ui = "0.1"` but in your rust code you have something along the lines of `use rust-ui::prelude::*;` 
+> Due to the volatile stage the package is currently in, with features being added changed or completely removed on the fly, this crate is currently unavailable on crates.io. To use rust-ui in your project please include the following in your Cargo.toml:
+> ```toml
+> rust-ui = {git = "https://github.com/Kees-van-Beilen/rust-ui.git"}
+> ```
+<!-- > The package is called `kz-rust-ui` for the time being (this will change in the future). **However within Rust it is named `rust-ui`**. That means that in your cargo.toml you'll see a line like `kz-rust-ui = "0.1"` but in your rust code you have something along the lines of `use rust-ui::prelude::*;` 
 ## building / crosscompilation
-Depending on platform the build process might look different. In all cases a simple `cargo run` will work if your targeting your own device.
+Depending on platform the build process might look different. In all cases a simple `cargo run` will work if your targeting your own device. -->
 
 ### macOS
 A basic macos executable can be obtained using `cargo build`. You may also specify a target architecture.
@@ -108,7 +113,13 @@ If you're unable to boot the development disk on your target device, or if you'r
 
 
 
+
 # Examples
+These examples are currently not buildable, as the macro system is currently under development. Look at the `examples/no_macros` directory  for examples that don't use the macro system. These examples (prefixed by `wm_`) can be bundled and ran using:
+```sh
+cargo bundle --target aarch64-apple-ios-sim --example wm_hello_world
+xcrun simctl install booted "<path output by the bundle command>"
+```
 ## Hello World
 One of the first programs you'll write in rust-ui, perfect for testing if everything worked. 
 ```rs
