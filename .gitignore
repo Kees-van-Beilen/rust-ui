@@ -1,6 +1,5 @@
 /target
 /old
-.*
 
 # local development
 /design.md
