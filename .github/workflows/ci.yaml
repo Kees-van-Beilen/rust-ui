@@ -33,4 +33,4 @@ jobs:
         with:
           targets: x86_64-linux-android,x86_64-linux-android
       - name: build
-        run: cargo build --target x86_64-linux-android --target x86_64-linux-androi
+        run: cargo build --target x86_64-linux-android --target x86_64-linux-android
