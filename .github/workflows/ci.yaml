@@ -24,7 +24,7 @@ jobs:
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
       - name: build
-        run: cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --target x86_64-apple-ios
+        run: cargo build --target aarch64-apple-darwin --target x86_64-apple-darwin
   android:
     runs-on: ubuntu-24.04
     steps:
@@ -33,4 +33,4 @@ jobs:
         with:
           targets: x86_64-linux-android,x86_64-linux-android
       - name: build
-        run: cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --target x86_64-apple-ios
+        run: cargo build --target x86_64-linux-android --target x86_64-linux-android
