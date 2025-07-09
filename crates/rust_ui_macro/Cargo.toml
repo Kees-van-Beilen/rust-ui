@@ -1,0 +1,10 @@
+[package]
+name = "rust_ui_macro"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+
+[lib]
+proc-macro = true

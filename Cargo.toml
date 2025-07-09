@@ -10,12 +10,19 @@ keywords = ["ui", "ios", "gui", "graphics", "app","framework"]
 license = "MIT OR Apache-2.0"
 
 
+[workspace]
+members = ["crates/rust_ui_core", "crates/rust_ui_macro"]
+
+
+
 [dependencies]
 bevy_color = {version="0.15.4",default-features = false}
 clone_dyn = "0.32.0"
 log = "0.4.27"
 syslog = "7.0.0"
 tuplex = "0.1.2"
+rust_ui_core = {path = "crates/rust_ui_core"}
+rust_ui_macro = {path = "crates/rust_ui_macro"}
 
 
 [target.'cfg(target_os = "macos")'.dependencies]
@@ -34,6 +41,23 @@ objc2-foundation = "0.3.0"
 objc2-quartz-core = "0.3.0"
 objc2-ui-kit = "0.3.1"
 objc2-os-log = "0.3.1"
+
+
+[[example]]
+name = "hello_world"
+path = "examples/macros/hello_world.rs"
+
+[[example]]
+name = "image"
+path = "examples/macros/image.rs"
+
+[[example]]
+name = "colors"
+path = "examples/macros/colors.rs"
+
+[[example]]
+name = "counter"
+path = "examples/macros/counter.rs"
 
 [[example]]
 name = "wm_hello_world"
@@ -54,6 +78,14 @@ path = "examples/no_macros/counter_complex.rs"
 [[example]]
 name = "wm_text"
 path = "examples/no_macros/text.rs"
+
+[[example]]
+name = "wm_image"
+path = "examples/no_macros/image.rs"
+
+[[example]]
+name = "wm_diary"
+path = "examples/no_macros/full_app/diary.rs"
 
 
 

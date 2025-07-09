@@ -1,16 +1,14 @@
-#![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg")]
-#![doc = include_str!("../readme.md")]
-
-pub mod icon;
-pub mod layout;
-pub mod modifiers;
-pub mod native;
-pub mod view;
-pub mod views;
+extern crate rust_ui_core;
+pub use rust_ui_core::{
+    layout,
+    modifiers,
+    view,
+    views,
+    native
+};
 
 pub mod prelude {
-    pub use crate::icon::*;
-    pub use crate::layout::{self, Position, Size};
-    pub use crate::views::*;
-    pub use bevy_color::Color;
+    pub use rust_ui_core::prelude::*;
+    pub use rust_ui_macro::*;
 }
+pub use rust_ui_core::PartialInitialisable;

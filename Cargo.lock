@@ -563,9 +563,34 @@ dependencies = [
  "objc2-os-log",
  "objc2-quartz-core",
  "objc2-ui-kit",
+ "rust_ui_core",
+ "rust_ui_macro",
  "syslog",
  "tuplex",
 ]
+
+[[package]]
+name = "rust_ui_core"
+version = "0.1.0"
+dependencies = [
+ "bevy_color",
+ "block2",
+ "clone_dyn",
+ "log",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-core-graphics",
+ "objc2-foundation",
+ "objc2-os-log",
+ "objc2-quartz-core",
+ "objc2-ui-kit",
+ "syslog",
+ "tuplex",
+]
+
+[[package]]
+name = "rust_ui_macro"
+version = "0.1.0"
 
 [[package]]
 name = "serde"
