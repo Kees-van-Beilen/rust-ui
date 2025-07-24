@@ -1,4 +1,4 @@
-use std::{cell::{Cell, Ref, RefCell, RefMut}, ops::{Deref, DerefMut}, rc::Rc};
+use std::{cell::{Cell, Ref, RefCell, RefMut}, fmt::Display, ops::{Deref, DerefMut}, rc::Rc};
 
 use crate::view::mutable::MutableViewRerender;
 
@@ -50,6 +50,12 @@ impl<T> State<'_,T> {
     pub fn get_mut(&mut self)->RefMut<'_,T>{
         self.signal.set(true);
         self.data.borrow_mut()
+    }
+}
+
+impl<T:Display> Display for PartialState<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.get().fmt(f)
     }
 }
 

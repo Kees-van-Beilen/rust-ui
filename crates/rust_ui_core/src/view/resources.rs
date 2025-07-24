@@ -41,6 +41,8 @@ impl<'a> Clone for ResourceStack<'a> {
     }
 }
 
+
+
 impl<'a> ResourceStack<'a> {
     fn as_mut(&mut self) -> &mut Resources {
         match self {
@@ -73,10 +75,7 @@ impl<'a> ResourceStack<'a> {
         a
     }
     pub fn get_resource<T: Resource>(&self) -> Option<&T> {
-        // dbg!(&TypeId::of::<T>());
-
         let v = self.as_ref().stack.get(&TypeId::of::<T>())?;
-        // println!("get {:?} {:?}",TypeId::of::<T>(),(&*v as &dyn Any).is::<Box<dyn Resource>>());
         (v.as_any()).downcast_ref::<T>()
     }
 }

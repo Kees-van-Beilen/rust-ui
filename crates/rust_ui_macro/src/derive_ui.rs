@@ -1,6 +1,6 @@
 use std::{ cell::Cell, str::FromStr};
 
-use proc_macro::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
+use proc_macro::{token_stream::IntoIter, Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
 pub(crate) enum UIClassification {
     Main,
@@ -196,6 +196,59 @@ pub fn get_struct_info(item: TokenStream) -> StructInfo {
     StructInfo { name, fields }
 }
 
+fn translate_rust_ui_closure(function_tokens:&mut TokenStream,function_args:&mut TokenStream,iter:&mut IntoIter)->TokenStream{
+     while let Some(t) = iter.next() {
+        match t {
+            TokenTree::Punct(p) if p.as_char() == ':' => panic!("rust ui closures may not contain type annotation"),
+            TokenTree::Punct(p) if p.as_char() == '|' => {
+                function_tokens.extend([TokenTree::Punct(p)]);
+                break;
+            },
+            t=> {
+                function_args.extend([t.clone()]);
+                function_tokens.extend([t]) 
+            }
+        }
+    }
+    let g = match iter.next() {
+        Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => g,
+        e=>panic!("50 {:?} {}",e,function_tokens)
+    };
+    let outer_function = function_tokens.clone();
+    function_tokens.extend([TokenTree::Group(g)]);
+    return outer_function
+
+}
+
+fn translate_rust_ui_close_with_data(inner_function:TokenStream,outer_function:TokenStream,data_ref_unpack:&TokenStream,func_args_inner:TokenStream)->TokenTree{
+    TokenTree::Group(Group::new(Delimiter::Brace, {
+                            let mut s = TokenStream::from_str("let data = data.clone(); move").unwrap();
+                            s.extend(outer_function);
+                            s.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
+                                let mut s = TokenStream::from_str("let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false); let res = ").unwrap();
+                                let mut sub = TokenStream::new();
+                                sub.extend(data_ref_unpack.clone());
+                                // sub.extend(TokenStream::from_str("let res = ").unwrap());
+
+                                sub.extend([
+                                    TokenTree::Group(Group::new(Delimiter::Parenthesis, {
+                                        let mut s = TokenStream::from_str("move").unwrap();
+                                        s.extend(inner_function);
+                                        s
+                                    })),
+                                    TokenTree::Group(Group::new(Delimiter::Parenthesis, func_args_inner)),
+                                ]);
+                                // sub.extend(TokenStream::from_str("; if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
+                                s.extend([TokenTree::Group(Group::new(Delimiter::Brace, sub))]);
+                                s.extend(TokenStream::from_str(";::std::mem::drop(data_ref); if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
+
+                                s
+                                
+                            }))]);
+                            s
+                        }))
+}
+
 ///returns true if there are child view present
 fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream)->bool{
     // writer.extend([TokenTree::Group(Group::new(Delimiter::Brace, ))]);
@@ -240,6 +293,20 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
                             TokenTree::Group(g)
                         ]);
                     },
+                    Some(TokenTree::Punct(p1)) if p1.as_char() == '|' => {
+                        let mut inner_function = TokenStream::from_iter([TokenTree::Punct(p1)]);
+                        let mut func_args_inner = TokenStream::new();
+                        let outer_function =   translate_rust_ui_closure(&mut inner_function,&mut func_args_inner,&mut iter);
+                        // let outer_function = inner_function.clone();
+                        // println!("{}",&func_args_inner);
+                        children.extend([
+                            TokenTree::Punct(p),
+                            TokenTree::Ident(attrib_name),
+                            TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
+                                translate_rust_ui_close_with_data(inner_function, outer_function, data_ref_unpack, func_args_inner),
+                            ])))
+                        ]);
+                    }
                     _=> panic!("15")
                 }
                 continue;
@@ -251,25 +318,9 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
             TokenTree::Punct(p) if p.as_char() == '|' => {
                 let mut inner_function = TokenStream::from_iter([TokenTree::Punct(p)]);
                 let mut func_args_inner = TokenStream::new();
-                while let Some(t) = iter.next() {
-                    match t {
-                        TokenTree::Punct(p) if p.as_char() == ':' => panic!("rust ui closures may not contain type annotation"),
-                        TokenTree::Punct(p) if p.as_char() == '|' => {
-                            inner_function.extend([TokenTree::Punct(p)]);
-                            break;
-                        },
-                        t=> {
-                            func_args_inner.extend([t.clone()]);
-                            inner_function.extend([t]) 
-                        }
-                    }
-                }
-                let g = match iter.next() {
-                    Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => g,
-                    e=>panic!("50 {:?} {}",e,inner_function)
-                };
-                let outer_function = inner_function.clone();
-                inner_function.extend([TokenTree::Group(g)]);
+               
+               
+                let outer_function =  translate_rust_ui_closure(&mut inner_function,&mut func_args_inner,&mut iter);
 
 
                 // let mut bracket_stream = TokenStream::new();
@@ -277,32 +328,7 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
                     TokenTree::Punct(Punct::new('.', Spacing::Alone)),
                     TokenTree::Ident(Ident::new("with_capture_callback", Span::call_site())),
                     TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
-                        TokenTree::Group(Group::new(Delimiter::Brace, {
-                            let mut s = TokenStream::from_str("let data = data.clone(); move").unwrap();
-                            s.extend(outer_function);
-                            s.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
-                                let mut s = TokenStream::from_str("let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false); let res = ").unwrap();
-                                let mut sub = TokenStream::new();
-                                sub.extend(data_ref_unpack.clone());
-                                // sub.extend(TokenStream::from_str("let res = ").unwrap());
-
-                                sub.extend([
-                                    TokenTree::Group(Group::new(Delimiter::Parenthesis, {
-                                        let mut s = TokenStream::from_str("move").unwrap();
-                                        s.extend(inner_function);
-                                        s
-                                    })),
-                                    TokenTree::Group(Group::new(Delimiter::Parenthesis, func_args_inner)),
-                                ]);
-                                // sub.extend(TokenStream::from_str("; if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
-                                s.extend([TokenTree::Group(Group::new(Delimiter::Brace, sub))]);
-                                s.extend(TokenStream::from_str(";::std::mem::drop(data_ref); if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
-
-                                s
-                                
-                            }))]);
-                            s
-                        }))
+                        translate_rust_ui_close_with_data(inner_function, outer_function, data_ref_unpack, func_args_inner),
                     ])))
                     
                 ]);
@@ -365,9 +391,11 @@ fn translate_rust_ui_init_syntax_view(writer:&mut TokenStream,name:Ident,group:G
                 TokenTree::Punct(Punct::new(':', Spacing::Joint)),
                 TokenTree::Punct(Punct::new(':', Spacing::Alone)),
                 TokenTree::Ident(Ident::new("new", Span::call_site())),
-                TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
-                    TokenTree::Group(group),
-                ])))
+                TokenTree::Group(Group::new(Delimiter::Parenthesis, {
+                    let mut s = TokenStream::from_str("#[allow(unused_parens)]").unwrap();
+                    s.extend([TokenTree::Group(group),]);
+                    s
+                }))
             ]);
         },
         Delimiter::Brace => {
