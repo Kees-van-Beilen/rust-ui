@@ -9,3 +9,5 @@
 *.pem
 rust-toolchain.toml
 examples/no_macros/full_app
+.DS_Store
+.vscode
