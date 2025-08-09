@@ -8,6 +8,7 @@ readme = "readme.md"
 repository = "https://github.com/Kees-van-Beilen/rust-ui"
 keywords = ["ui", "ios", "gui", "graphics", "app","framework"]
 license = "MIT OR Apache-2.0"
+# https://inpolen.nl/profiles/rust-ui/public/assets/ui-icon-dark.svg
 
 
 [workspace]

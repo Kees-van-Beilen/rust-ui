@@ -9,4 +9,3 @@ struct RootView {
         Text("Hello world")
     }
 }
-

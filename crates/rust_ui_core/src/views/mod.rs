@@ -1,3 +1,9 @@
+//!
+//! Views are the core building blocks in rust-ui. This module offers a number of useful views. Some of these views like text or button views 
+//! translate directly to native views. Others are considered layout-views, those views merely position and size their child views.
+//! 
+//! 
+
 pub mod button;
 pub mod layout;
 pub mod tabbar;
