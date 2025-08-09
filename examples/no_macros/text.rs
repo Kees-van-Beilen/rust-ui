@@ -1,4 +1,4 @@
-use rust_ui::{modifiers::font::FontResourceModifier, prelude::*};
+use rust_ui::{modifiers::{font::FontResourceModifier, frame::{Frame, FrameModifier}}, prelude::*};
 
 fn main() {
     rust_ui::native::launch_application_with_view(VStack {
@@ -24,6 +24,7 @@ fn main() {
                         content: "Except".to_string(),
                     }
                     .with_font_size(18.0),
+                    ColorView(Color::WHITE).frame(Frame::new(26.0, 26.0)),
                     Text {
                         content: "That one".to_string(),
                     },
