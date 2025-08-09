@@ -1,0 +1,36 @@
+name: CI
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: aarch64-apple-ios-sim,aarch64-apple-ios,x86_64-apple-ios
+      - name: build
+        run: cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --target x86_64-apple-ios
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: build
+        run: cargo build --target aarch64-apple-darwin --target x86_64-apple-darwin
+  android:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: x86_64-linux-android,x86_64-linux-android
+      - name: build
+        run: cargo build --target x86_64-linux-android --target x86_64-linux-android
