@@ -60,6 +60,14 @@ name = "counter"
 path = "examples/macros/counter.rs"
 
 [[example]]
+name = "counter_complex"
+path = "examples/macros/counter_complex.rs"
+
+[[example]]
+name = "text"
+path = "examples/macros/text.rs"
+
+[[example]]
 name = "wm_hello_world"
 path = "examples/no_macros/hello_world.rs"
 
@@ -83,9 +91,9 @@ path = "examples/no_macros/text.rs"
 name = "wm_image"
 path = "examples/no_macros/image.rs"
 
-[[example]]
-name = "wm_diary"
-path = "examples/no_macros/full_app/diary.rs"
+# [[example]]
+# name = "wm_diary"
+# path = "examples/no_macros/full_app/diary.rs"
 
 
 

@@ -8,3 +8,5 @@
 *.mobileprovision
 *.plist
 *.pem
+rust-toolchain.toml
+examples/no_macros/full_app

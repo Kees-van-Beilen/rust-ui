@@ -36,6 +36,7 @@ pub struct VStackLayout {
 
 impl VirtualLayoutManager<HStackData> for HStackLayout {
     fn preferred_size(&self, _: &HStackData) -> Size<Option<f64>> {
+
         Size {
             width: self.prefer_width,
             height: self.prefer_height,

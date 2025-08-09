@@ -1,5 +1,8 @@
 mod app;
 mod button;
+mod image;
+mod click_view;
+mod scroll_view;
 
 use crate::{icon::Icon, layout::ComputableLayout};
 use objc2::rc::Retained;
@@ -43,17 +46,18 @@ impl Into<Retained<UIImage>> for Icon {
 }
 
 pub mod native {
+    pub use super::image::*;
     use super::{
         UIViewRepresentable,
         app::{Delegate, ON_LAUNCH_SIGNAL},
     };
     use crate::{
-        icon::Icon, layout::{self, ComputableLayout, RenderObject, Size}, view::{mutable::MutableViewRerender, resources::{Resource, ResourceStack}}, views::{tabbar::RenderedTabData, FontFamily, FontSize, FontWeight}
+        icon::Icon, layout::{self, ComputableLayout, Position, RenderObject, Size}, view::{mutable::MutableViewRerender, resources::{Resource, ResourceStack}}, views::{tabbar::RenderedTabData, FontFamily, FontSize, FontWeight}
     };
     use block2::RcBlock;
     use objc2::{ClassType, MainThreadMarker, MainThreadOnly, rc::Retained};
     use objc2_core_graphics::{CGColor, CGRectZero};
-    use objc2_foundation::{NSArray, NSString};
+    use objc2_foundation::{NSArray, NSBundle, NSFileManager, NSString};
     use objc2_ui_kit::{
         NSLineBreakMode, NSTextAlignment, UIAction, UIApplication, UIButton, UIColor,
         UIControlState, UIFontWeight, UIFontWeightBlack, UIFontWeightBold, UIFontWeightHeavy,
@@ -72,6 +76,7 @@ pub mod native {
     }
 
     impl<T: crate::view::mutable::MutableView> MutableViewRerender for Rc<RefCell<T>> {
+        
         fn rerender(&self) {
             let mut data = self.borrow_mut();
             if let Some(k) = &mut data.get_mut_attached() {
@@ -87,6 +92,14 @@ pub mod native {
                 drop(data);
                 let _ = self.render(render_data);
             }
+        }
+        
+        fn enqueue_change(&self) {
+            todo!()
+        }
+        
+        fn flush_changes(&self) {
+            todo!()
         }
     }
 
@@ -126,6 +139,7 @@ pub mod native {
             if let Some(k) = &mut attached {
                 k.swap(&view);
                 k.set_size(view.borrow().layout_size);
+                k.set_position(Position { x: 0.0, y: 0.0 });
             } else {
                 *attached = Some(view.clone());
             }
@@ -145,6 +159,9 @@ pub mod native {
 
         fn destroy(&mut self) {
             self.borrow_mut().children.destroy();
+        }
+        fn preferred_size(&self, in_frame: &Size<f64>) -> Size<Option<f64>> {
+            self.borrow().children.preferred_size(in_frame)
         }
     }
 
@@ -403,7 +420,16 @@ pub mod native {
         }
     }
 
+
+
     pub fn launch_application_with_view(root: impl RenderObject + 'static) {
+        //setup the default filemanager
+        unsafe {
+            let default_file_manager = NSFileManager::defaultManager();
+            let path = NSBundle::mainBundle().bundlePath();
+            default_file_manager.changeCurrentDirectoryPath(&path);
+        }
+
         let mtm = MainThreadMarker::new().unwrap();
         //this is required to register the class
         let name = Delegate::class().to_string();

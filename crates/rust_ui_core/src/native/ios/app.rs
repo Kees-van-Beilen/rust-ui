@@ -1,11 +1,10 @@
 
-use crate::layout::{ComputableLayout, RenderObject, Size};
+use crate::layout::{ComputableLayout, Position, RenderObject, Size};
 use objc2::rc::Retained;
 use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send};
-use objc2_foundation::{MainThreadMarker, NSObject, NSObjectProtocol};
+use objc2_foundation::{MainThreadMarker, NSObject, NSObjectProtocol,NSSize};
 use objc2_ui_kit::{
-    UIApplication, UIApplicationDelegate, UIApplicationLaunchOptionsKey, UIViewController,
-    UIWindow,
+    UIApplication, UIApplicationDelegate, UIApplicationLaunchOptionsKey, UIContentContainer, UIViewController, UIViewControllerTransitionCoordinator, UIWindow
 };
 use std::cell::{Cell, OnceCell, RefCell};
 //These are globals meant for the main thread only. We do this because we are not the one
@@ -42,7 +41,12 @@ define_class!(
             let s = this.set_ivars(AppDelegateIvars::default());
             unsafe { msg_send![super(s), init] }
         }
+        #[unsafe(method(resize:))]
+        fn objc_resize(&self,to:NSSize) {
+            self.resize_to(to);
+        }
     }
+
 
     // SAFETY: `NSApplicationDelegate` has no safety requirements.
     unsafe impl UIApplicationDelegate for Delegate {
@@ -58,14 +62,67 @@ define_class!(
             self.resize();
             true
         }
+
+
     }
 
 
 );
 
+// use objc2::ffi::id
+#[derive(Default)]
+pub struct RustViewControllerIVars {
+}
+
+define_class!(
+    // SAFETY:
+    // - The superclass NSObject does not have any subclassing requirements.
+    // - `Delegate` does not implement `Drop`.
+    #[unsafe(super = UIViewController)]
+    #[thread_kind = MainThreadOnly]
+    #[name = "RustViewController"]
+    #[ivars = RustViewControllerIVars]
+    pub struct RustViewController;
+
+    // SAFETY: `NSObjectProtocol` has no safety requirements.
+    unsafe impl NSObjectProtocol for RustViewController {}
+    impl  RustViewController {
+        #[unsafe(method_id(init))]
+        fn init(this: Allocated<Self>)->Retained<Self>{
+            let s = this.set_ivars(RustViewControllerIVars::default());
+            unsafe { msg_send![super(s), init] }
+        }
+       
+    }
+
+    // SAFETY: `NSApplicationDelegate` has no safety requirements.
+    unsafe impl UIContentContainer for RustViewController {
+        // SAFETY: The signature is correct.
+         #[unsafe(method(viewWillTransitionToSize:withTransitionCoordinator:))]
+        fn view_will_transition_to_size(&self, size: NSSize,_tc:objc2::ffi::id) {
+            self.resize(size);
+        }
+    }
+
+
+);
+impl RustViewController {
+    pub fn resize(&self,to:NSSize){
+        let mtm = MainThreadMarker::new().unwrap();
+        let shared = UIApplication::sharedApplication(mtm);
+        unsafe { 
+            let del = shared.delegate().unwrap();
+            let _:() = msg_send![&del, resize:to];
+        }
+    }
+}
+
 pub unsafe fn create_window(mtm: MainThreadMarker) -> Retained<UIWindow> {
     let window = unsafe { UIWindow::init(UIWindow::alloc(mtm)) };
-    unsafe { window.setRootViewController(Some(&UIViewController::new(mtm))) };
+    // window.resize
+    let mtm = MainThreadMarker::new().unwrap();
+    let controller:Retained<RustViewController> = msg_send!(RustViewController::alloc(mtm), init);
+    unsafe { window.setRootViewController(Some(&controller)) };
 
     return window;
 }
@@ -91,7 +148,22 @@ impl Delegate {
         let size: Size<f64> = frame.size.into();
         ROOT_VIEW.with(|e| {
             let mut k = e.borrow_mut();
-            k.as_mut().unwrap().set_size(size);
+            let view = k.as_mut().unwrap();
+            view.set_size(size.into());
+            view.set_position(Position { x: 0.0, y: 0.0 });
+        });
+    }
+    //Mainthread only
+    pub fn resize_to(&self,to:NSSize) {
+        // let window = self.ivars().window.get().unwrap();
+        // let view = window.rootViewController().unwrap().view().unwrap();
+        // let frame = view.frame();
+        // let size: Size<f64> = frame.size.into();
+        ROOT_VIEW.with(|e| {
+            let mut k = e.borrow_mut();
+            let view = k.as_mut().unwrap();
+            view.set_size(to.into());
+            view.set_position(Position { x: 0.0, y: 0.0 });
         });
     }
 }
