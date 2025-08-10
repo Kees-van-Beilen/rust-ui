@@ -43,6 +43,9 @@ objc2-quartz-core = "0.3.0"
 objc2-ui-kit = "0.3.1"
 objc2-os-log = "0.3.1"
 
+[[example]]
+name = "calculator"
+path = "examples/macros/apps/calculator.rs"
 
 [[example]]
 name = "hello_world"

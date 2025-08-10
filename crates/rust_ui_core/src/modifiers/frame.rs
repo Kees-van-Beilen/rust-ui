@@ -11,6 +11,10 @@ impl Frame {
         Frame { min: Size::splat(None), max: Size::splat(None), preferred: Size { width: Some(width), height: Some(height) } }
     }
 
+    pub fn no_preference()->Self{
+        Frame {min: Size::splat(None),max:Size::splat(None),preferred:Size::splat(None)}
+    }
+
     pub fn width(mut self,value:f64)->Self{
         self.preferred.width = Some(value);
         self

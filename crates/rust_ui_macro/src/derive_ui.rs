@@ -448,29 +448,69 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
             translate_rust_ui_init_syntax_view(writer,name,group,data_ref_unpack);
             // writer.extend(iter);
             //we might have some . or || properties we need to handle
-            match iter.next() {
-                Some(TokenTree::Punct(p)) if p.as_char() == '|' => {
-                let mut inner_function = TokenStream::from_iter([TokenTree::Punct(p)]);
-                let mut func_args_inner = TokenStream::new();
-               
-               
-                let outer_function =  translate_rust_ui_closure(&mut inner_function,&mut func_args_inner,&mut iter);
-
-
-                // let mut bracket_stream = TokenStream::new();
-                writer.extend([
-                    TokenTree::Punct(Punct::new('.', Spacing::Alone)),
-                    TokenTree::Ident(Ident::new("with_capture_callback", Span::call_site())),
-                    TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
-                        translate_rust_ui_close_with_data(inner_function, outer_function, data_ref_unpack, func_args_inner),
-                    ])))
+            while let Some(next) = iter.next() {
+                match next {
+                    TokenTree::Punct(p) if p.as_char() == '|' => {
+                        let mut inner_function = TokenStream::from_iter([TokenTree::Punct(p)]);
+                        let mut func_args_inner = TokenStream::new();
                     
-                ]);
-                // children.extend([TokenTree::Group(Group::new(Delimiter::Brace, bracket_stream))]);
+                    
+                        let outer_function =  translate_rust_ui_closure(&mut inner_function,&mut func_args_inner,&mut iter);
 
-            },
-            _=>{}
+
+                        // let mut bracket_stream = TokenStream::new();
+                        writer.extend([
+                            TokenTree::Punct(Punct::new('.', Spacing::Alone)),
+                            TokenTree::Ident(Ident::new("with_capture_callback", Span::call_site())),
+                            TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
+                                translate_rust_ui_close_with_data(inner_function, outer_function, data_ref_unpack, func_args_inner),
+                            ])))
+                            
+                        ]);
+
+                    },
+                    TokenTree::Punct(p) if p.as_char() == '.' => {
+                        let Some(TokenTree::Ident(ident)) = iter.next() else {continue};
+                        match iter.next() {
+                            Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Parenthesis => {
+                                writer.extend([
+                                    TokenTree::Punct(p),
+                                    TokenTree::Ident(ident),
+                                    TokenTree::Group(g)
+                                ]);
+                            }
+                            Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => {
+                                let mut body = TokenStream::new();
+                                translate_rust_ui_init_syntax(&mut body, g.stream(), data_ref_unpack);
+                                writer.extend([
+                                    TokenTree::Punct(p),
+                                    TokenTree::Ident(ident),
+                                    TokenTree::Group(Group::new(Delimiter::Parenthesis, body))
+                                ]);
+                            }
+                            Some(TokenTree::Punct(p)) if p.as_char() == '|' => {
+                                let mut inner_function = TokenStream::from_iter([TokenTree::Punct(p)]);
+                                let mut func_args_inner = TokenStream::new();
+                            
+                            
+                                let outer_function =  translate_rust_ui_closure(&mut inner_function,&mut func_args_inner,&mut iter);
+                                writer.extend([
+                                    TokenTree::Punct(Punct::new('.', Spacing::Alone)),
+                                    TokenTree::Ident(ident),
+                                    TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
+                                        translate_rust_ui_close_with_data(inner_function, outer_function, data_ref_unpack, func_args_inner),
+                                    ])))
+                                    
+                                ]);
+                            }
+                            _=>continue
+                        }
+                        
+                    }
+                    _=>{}
+                }
             }
+            
         },
         Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => {
             let mut stream = TokenStream::new();
@@ -912,7 +952,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
     //Inject the bind! macro. This method is type safe :) yeah
     children_fn_body_unwrapped.extend(TokenStream::from_str("macro_rules! bind {
     ($state:ident) => {
-        ::rust_ui::view::state::PartialState::as_binding($state,::std::rc:Rc::new(::std::cell::RefCell::new(data)))
+        ::rust_ui::view::state::PartialState::as_binding($state,data.clone())
     };
 };").unwrap());
 

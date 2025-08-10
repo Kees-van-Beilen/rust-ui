@@ -52,7 +52,7 @@ pub mod native {
         app::{Delegate, ON_LAUNCH_SIGNAL},
     };
     use crate::{
-        icon::Icon, layout::{self, ComputableLayout, Position, RenderObject, Size}, view::{mutable::MutableViewRerender, resources::{Resource, ResourceStack}}, views::{tabbar::RenderedTabData, FontFamily, FontSize, FontWeight}
+        icon::Icon, layout::{self, ComputableLayout, Position, RenderObject, Size}, view::{mutable::MutableViewRerender, resources::{Resource, ResourceStack}}, views::{tabbar::RenderedTabData, FontFamily, FontSize, FontWeight, TextAlignment}
     };
     use block2::RcBlock;
     use objc2::{ClassType, MainThreadMarker, MainThreadOnly, rc::Retained};
@@ -210,7 +210,14 @@ pub mod native {
                 let str = NSString::from_str(&self.content);
                 view.setText(Some(&str));
                 view.sizeToFit();
-                view.setTextAlignment(NSTextAlignment::Center);
+
+
+                let alignment = data.stack.get_resource::<TextAlignment>().copied().unwrap_or(TextAlignment::Center);
+                view.setTextAlignment(match alignment {
+                    TextAlignment::Leading => NSTextAlignment::Left,
+                    TextAlignment::Center => NSTextAlignment::Center,
+                    TextAlignment::Trailing => NSTextAlignment::Right,
+                });
                 view.setLineBreakMode(NSLineBreakMode::ByWordWrapping);
                 view.setNumberOfLines(0);
 

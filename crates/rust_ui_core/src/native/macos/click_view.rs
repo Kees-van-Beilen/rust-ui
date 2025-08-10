@@ -3,6 +3,7 @@ use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained, 
 use objc2_app_kit::NSView;
 use objc2_app_kit::NSEvent;
 use objc2_foundation::{MainThreadMarker, NSObjectProtocol};
+use crate::native::macos::nsview_setposition;
 
 pub struct ClickableContainerIVars {
     /// Callback to a in rust defined function
@@ -48,7 +49,8 @@ impl<T:crate::layout::ComputableLayout> crate::layout::ComputableLayout for Rend
     }
 
     fn set_position(&mut self, to: crate::prelude::Position<f64>) {
-        unsafe { self.1.setFrameOrigin(to.into()) };
+        nsview_setposition(&self.1, to.into());
+        // unsafe { self.1.setFrameOrigin(to.into()) };
     }
 
     fn destroy(&mut self) {

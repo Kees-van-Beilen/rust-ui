@@ -21,7 +21,8 @@ pub struct HStackLayout {
     allocated_width: f64,
     unallocated_units: usize,
     prefer_height: Option<f64>,
-    prefer_width: Option<f64>
+    prefer_width: Option<f64>,
+    child_count:usize,
 }
 
 #[derive(Default, Debug)]
@@ -31,6 +32,7 @@ pub struct VStackLayout {
     unallocated_units: usize,
     prefer_width: Option<f64>,
     prefer_height: Option<f64>,
+    child_count:usize,
 
 }
 
@@ -87,6 +89,7 @@ impl VirtualLayoutManager<HStackData> for HStackLayout {
         if let Some(width) = size.width {
             self.prefer_width = Some(self.prefer_width.unwrap_or_default().add(width));
         }
+        self.child_count +=1;
     }
 }
 
@@ -104,7 +107,7 @@ impl VirtualLayoutManager<VStackData> for VStackLayout {
             Some(height) => height,
             None if self.unallocated_units == 0 => with_frame.size.height,
             None => {
-                (with_frame.size.height - self.allocated_height) / self.unallocated_units as f64
+                (with_frame.size.height - self.allocated_height - data.spacing * (self.child_count as f64 - 1.0).max(0.0) ) / self.unallocated_units as f64
             }
         };
 
@@ -138,5 +141,6 @@ impl VirtualLayoutManager<VStackData> for VStackLayout {
         if let Some(height) = size.height {
             self.prefer_height = Some(self.prefer_height.unwrap_or_default().add(height));
         }
+        self.child_count +=1;
     }
 }
