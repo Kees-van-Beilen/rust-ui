@@ -1,11 +1,7 @@
+//! This crate contains a utility macro to help with the creation of views, who's soul purpose is to layout it child views.
 use crate::layout::{ComputableLayout, Position, Size};
 
-// pub trait VirtualLayout {
-//     type Children: ComputableLayout;
-//     fn children(&self)->&Self::Children;
-//     //create a custom layout organizer
-// }
-
+/// A child that can freely changed in size/position
 pub struct Child<'a> {
     ///index of this child
     pub index: usize,
@@ -14,6 +10,8 @@ pub struct Child<'a> {
     ///reference to the child's layout
     pub layout: &'a mut dyn ComputableLayout,
 }
+
+/// A readonly child 
 pub struct ChildRef<'a> {
     ///index of this child
     pub index: usize,
@@ -22,21 +20,38 @@ pub struct ChildRef<'a> {
     ///reference to the child's layout
     pub layout: &'a dyn ComputableLayout,
 }
+
+/// Never appears in user facing code, nor do users of the `virtual_layout!` macro inside of this crate have to worry about this structure
+#[doc(hidden)]
 #[derive(Debug, Default)]
 pub enum PreferredSizeState {
     #[default]
     Uninitialized,
     Initialized(Size<Option<f64>>),
 }
+/// Never appears in user facing code, nor do users of the `virtual_layout!` macro inside of this crate have to worry about this structure
+/// This may lead to a lot of confusion with the `frame` modifier
+#[doc(hidden)]
 #[derive(Default, Debug)]
 pub struct Frame {
     pub position: Position<f64>,
     pub size: Size<f64>,
 }
+
 pub trait VirtualLayoutManager<T>: Default {
+    ///
+    /// Communicate the size this view whishes to take.
+    /// This almost directly translates to [`crate::layout::ComputableLayout::preferred_size`].
+    /// However before this function is called first [`VirtualLayoutManager::inspect_child`] is called for every child view (sequentially).
+    /// This allows you to calculate the preferred size based on the children.
+    /// 
     fn preferred_size(&self, _view: &T) -> Size<Option<f64>> {
         Size::splat(None)
     }
+    ///
+    /// This function is called when a parent view calls `set_size` or `set_position` on this view.
+    /// It is called for every child in this view sequentially
+    ///
     fn set_layout_for_child(&mut self, child: Child, with_frame: &Frame, view: &T);
     ///This method is ran for all children in sequence. Then set_layout_for_child is called in sequence
     /// This allows you to, if necessary, compute layouts which dynamically size based on the children's
@@ -44,6 +59,30 @@ pub trait VirtualLayoutManager<T>: Default {
     fn inspect_child(&mut self, _child: ChildRef, _with_frame: &Frame, _view: &T) {}
 }
 
+// if possible this should not be a macro but an auto implement
+
+///
+/// automatically implement the boiler plate 
+/// 
+/// ## Usage example
+/// ```
+/// //here you write the data required to properly compute the layout
+/// #[derive(Default, Debug)]
+/// pub struct VStackLayout {
+///     current_width: f64,
+///     allocated_width: f64,
+///     unallocated_units: usize,
+///     prefer_height: Option<f64>,
+///     prefer_width: Option<f64>,
+///     child_count:usize,
+/// }
+/// // this macro call automatically creates the structs `VStack`, `VStackData`, `VStackPartialInit` and `RenderedVStack`
+/// virtual_layout!(VStack (VStackData,VStackPartialInit) => RenderedVStack (VStackLayout) {
+///     //here are the fields that user of your view will have to input
+///     spacing:f64
+/// });
+/// 
+/// ```
 #[macro_export]
 macro_rules! virtual_layout {
     ($name:ident ($data:ident, $partial:ident) => $rendered:ident ($layout:ident) {$($field:ident:$type:ty),+}) => {
