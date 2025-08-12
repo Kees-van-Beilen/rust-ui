@@ -347,6 +347,64 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
             }
             _=>panic!("16")
         };
+        if ident.to_string() == "for" {
+            
+            //implement for loop logic
+            //we will parse until we find the "in" ident, this is not correct behavior tho
+            let mut in_token = None;
+            let mut pattern = TokenStream::new();
+            while let Some(token) = iter.next() {
+                match token {
+                    TokenTree::Ident(ident) if ident.to_string() == "in" => {
+                        in_token = Some(ident);
+                        break;
+                    },
+                    e => pattern.extend([e]),
+                }
+            }
+            //parse until we find the block expr
+            let mut iterator = TokenStream::new();
+            let mut inner_block = None;
+            while let Some(token) = iter.next() {
+                match token {
+                    TokenTree::Group(g) if g.delimiter() == Delimiter::Brace => {
+                        inner_block = Some(g);
+                        break;
+                    },
+                    e => iterator.extend([e]),
+                }
+            }
+            if let Some(block) = inner_block && let Some(in_ident) = in_token {
+                //translate this statement into rust-ui
+                if started_children {
+                    children.extend([TokenTree::Punct(Punct::new(',', Spacing::Alone))]);
+                }
+                parsing_fields = false;
+                started_children = true;
+                children.extend(TokenStream::from_str("::rust_ui::views::control_flows::list::ListView::new"));
+                children.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([TokenTree::Group(Group::new(Delimiter::Brace, {
+                    let mut stream = TokenStream::from_str("let mut collection = std::vec::Vec::new();").unwrap();
+                    stream.extend([TokenTree::Ident(ident)]);
+                    stream.extend(pattern);
+                    stream.extend([TokenTree::Ident(in_ident)]);
+                    stream.extend(iterator);
+                    stream.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
+                        let mut stream = TokenStream::from_str("collection.push").unwrap();
+                        stream.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis, {
+                            let mut body = TokenStream::new();
+                            translate_rust_ui_init_syntax(&mut body, block.stream(), data_ref_unpack);
+                            body
+                        }))]);
+                        stream
+                    }))]);
+                    stream.extend(TokenStream::from_str("collection").unwrap());
+
+                    stream
+                }))])))]);
+
+            }
+            continue;
+        }
         match iter.next() {
             Some(TokenTree::Group(g)) if g.delimiter() != Delimiter::Bracket => {
                 if started_children {

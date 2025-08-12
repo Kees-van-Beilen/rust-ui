@@ -1,5 +1,12 @@
+use crate::{
+    self as rust_ui,
+    layout::ComputableLayout,
+    view::{
+        collection::LayoutCollection,
+        virtual_layout::{inspect_recurse, set_layout_recurse, ChildRef, Frame},
+    },
+};
 use std::ops::Add;
-use crate as rust_ui;
 
 use crate::{
     layout::{Position, Size},
@@ -15,6 +22,7 @@ virtual_layout!(VStack (VStackData,VStackPartialInit) => RenderedVStack (VStackL
     spacing:f64
 });
 
+
 #[derive(Default, Debug)]
 pub struct HStackLayout {
     current_width: f64,
@@ -22,7 +30,7 @@ pub struct HStackLayout {
     unallocated_units: usize,
     prefer_height: Option<f64>,
     prefer_width: Option<f64>,
-    child_count:usize,
+    child_count: usize,
 }
 
 #[derive(Default, Debug)]
@@ -32,13 +40,11 @@ pub struct VStackLayout {
     unallocated_units: usize,
     prefer_width: Option<f64>,
     prefer_height: Option<f64>,
-    child_count:usize,
-
+    child_count: usize,
 }
 
 impl VirtualLayoutManager<HStackData> for HStackLayout {
     fn preferred_size(&self, _: &HStackData) -> Size<Option<f64>> {
-
         Size {
             width: self.prefer_width,
             height: self.prefer_height,
@@ -50,15 +56,18 @@ impl VirtualLayoutManager<HStackData> for HStackLayout {
         with_frame: &crate::view::virtual_layout::Frame,
         data: &HStackData,
     ) {
-        let mut portion = (with_frame.size.width
-            - self.allocated_width
-            - data.spacing * (child.children_len - 1) as f64)
-            / self.unallocated_units as f64;
-        if let Some(width) = child.layout.preferred_size(&with_frame.size).width {
-            // if size.width < portion {
-            portion = width
-            // }
-        }
+
+        let portion = match child.layout.preferred_size(&with_frame.size).width {
+            Some(width) => width,
+            None if self.unallocated_units == 0 => with_frame.size.width,
+            None => {
+                (with_frame.size.width
+                    - self.allocated_width
+                    - data.spacing * (self.child_count as f64 - 1.0).max(0.0))
+                    / self.unallocated_units as f64
+            }
+        };
+
         child.layout.set_size(Size {
             width: portion,
             height: with_frame.size.height,
@@ -80,7 +89,7 @@ impl VirtualLayoutManager<HStackData> for HStackLayout {
         // let portion = with_frame.size.width / child.children_len as f64;
         if let Some(width) = size.width {
             self.allocated_width += width;
-        }else{
+        } else {
             self.unallocated_units += 1;
         }
         if let Some(height) = size.height {
@@ -89,13 +98,16 @@ impl VirtualLayoutManager<HStackData> for HStackLayout {
         if let Some(width) = size.width {
             self.prefer_width = Some(self.prefer_width.unwrap_or_default().add(width));
         }
-        self.child_count +=1;
+        self.child_count += 1;
     }
 }
 
 impl VirtualLayoutManager<VStackData> for VStackLayout {
     fn preferred_size(&self, _view: &VStackData) -> Size<Option<f64>> {
-        Size { width: self.prefer_width, height: self.prefer_height }
+        Size {
+            width: self.prefer_width,
+            height: self.prefer_height,
+        }
     }
     fn set_layout_for_child(
         &mut self,
@@ -107,7 +119,10 @@ impl VirtualLayoutManager<VStackData> for VStackLayout {
             Some(height) => height,
             None if self.unallocated_units == 0 => with_frame.size.height,
             None => {
-                (with_frame.size.height - self.allocated_height - data.spacing * (self.child_count as f64 - 1.0).max(0.0) ) / self.unallocated_units as f64
+                (with_frame.size.height
+                    - self.allocated_height
+                    - data.spacing * (self.child_count as f64 - 1.0).max(0.0))
+                    / self.unallocated_units as f64
             }
         };
 
@@ -132,7 +147,7 @@ impl VirtualLayoutManager<VStackData> for VStackLayout {
         let size: Size<Option<f64>> = child.layout.preferred_size(&with_frame.size);
         if let Some(height) = size.height {
             self.allocated_height += height;
-        }else{
+        } else {
             self.unallocated_units += 1;
         }
         if let Some(width) = size.width {
@@ -141,6 +156,6 @@ impl VirtualLayoutManager<VStackData> for VStackLayout {
         if let Some(height) = size.height {
             self.prefer_height = Some(self.prefer_height.unwrap_or_default().add(height));
         }
-        self.child_count +=1;
+        self.child_count += 1;
     }
 }

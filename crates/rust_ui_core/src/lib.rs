@@ -1,14 +1,10 @@
-#![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg")]
+// #![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg")]
 // #![doc = include_str!("../readme.md")]
-
-
-use std::cell::Cell;
-
-use crate::views::Button;
 
 pub mod icon;
 pub mod layout;
 pub mod modifiers;
+#[doc(hidden)]
 pub mod native;
 pub mod view;
 pub mod views;

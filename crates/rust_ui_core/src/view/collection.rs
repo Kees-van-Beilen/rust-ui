@@ -9,6 +9,10 @@ pub trait LayoutCollection {
     fn with_v_tables(&mut self, f: impl FnOnce(&mut [&mut dyn ComputableLayout]));
     /// Get a reference to the [ComputableLayout]s in this collection
     fn with_v_tables_ref(&self, f: impl FnOnce(&[&dyn ComputableLayout]));
+
+
+    fn write_v_tables<'a,'b>(&'a self,buf:&'b mut Vec<&'a dyn ComputableLayout>);
+    fn write_v_tables_mut<'a,'b>(&'a mut self,buf:&'b mut Vec<&'a mut dyn ComputableLayout>);
 }
 /// A view collection, represents a group of objects that can be "rendered" into a [`LayoutCollection`]
 /// View collections are automatically implemented for tuples (with up to 16 elements) whose types implement [`RenderObject`]
@@ -21,6 +25,13 @@ pub trait ViewCollection {
 macro_rules! impl_collection {
     ($($x:tt $y:tt),+) => {
         impl<$($x:  ComputableLayout),+> LayoutCollection for ($($x),+,) {
+
+            fn write_v_tables<'a,'b:>(&'a self,buf:&'b mut Vec<&'a dyn ComputableLayout>) {
+                $(buf.push(&self.$y as &dyn ComputableLayout));+
+            }
+            fn write_v_tables_mut<'a,'b>(&'a mut self,buf:&'b mut Vec<&'a mut dyn ComputableLayout>) {
+                $(buf.push(&mut self.$y as &mut dyn ComputableLayout));+
+            }
             fn with_v_tables(&mut self, f: impl FnOnce(&mut [&mut dyn ComputableLayout])) {
                 let mut a = ($(&mut self.$y as &mut dyn ComputableLayout),+,).into_array();
                 f(&mut a);

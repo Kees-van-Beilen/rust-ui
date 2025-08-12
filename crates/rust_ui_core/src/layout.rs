@@ -46,6 +46,13 @@ pub trait ComputableLayout {
         0
     }
 
+    fn write_v_tables<'a,'b>(&'a self,_buf:&'b mut Vec<&'a dyn ComputableLayout>) {
+        //by default a layout is just one element, so there is nothing dynamic to write
+    }
+    fn write_v_tables_mut<'a,'b>(&'a mut self,_buf:&'b mut Vec<&'a mut dyn ComputableLayout>) {
+        //by default a layout is just one element, so there is nothing dynamic to write
+    }
+
     /// Return the preferred size of a view.
     /// This method is implemented by views like Text.
     /// to signal to a layout manager that the view wants a certain (minimum size)

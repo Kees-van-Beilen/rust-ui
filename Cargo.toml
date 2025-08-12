@@ -6,7 +6,7 @@ authors = ["Kees van Beilen"]
 description = "A truly native mobile focused UI-framework for iOS and android."
 readme = "readme.md"
 repository = "https://github.com/Kees-van-Beilen/rust-ui"
-keywords = ["ui", "ios", "gui", "graphics", "app","framework"]
+keywords = ["ui", "ios","macos","android", "gui", "graphics","interface", "app","framework"]
 license = "MIT OR Apache-2.0"
 # https://inpolen.nl/profiles/rust-ui/public/assets/ui-icon-dark.svg
 
@@ -46,6 +46,11 @@ objc2-os-log = "0.3.1"
 [[example]]
 name = "calculator"
 path = "examples/macros/apps/calculator.rs"
+
+
+[[example]]
+name = "for_loop"
+path = "examples/macros/for_loop.rs"
 
 [[example]]
 name = "hello_world"

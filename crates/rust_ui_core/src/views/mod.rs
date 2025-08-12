@@ -10,6 +10,7 @@ pub mod tabbar;
 pub mod text;
 pub mod image;
 pub mod scrollview;
+pub mod control_flows;
 
 //this becomes a native view
 pub struct ColorView(pub bevy_color::Color);

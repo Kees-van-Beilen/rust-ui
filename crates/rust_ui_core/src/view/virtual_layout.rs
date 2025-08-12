@@ -11,7 +11,7 @@ pub struct Child<'a> {
     pub layout: &'a mut dyn ComputableLayout,
 }
 
-/// A readonly child 
+/// A readonly child
 pub struct ChildRef<'a> {
     ///index of this child
     pub index: usize,
@@ -44,7 +44,7 @@ pub trait VirtualLayoutManager<T>: Default {
     /// This almost directly translates to [`crate::layout::ComputableLayout::preferred_size`].
     /// However before this function is called first [`VirtualLayoutManager::inspect_child`] is called for every child view (sequentially).
     /// This allows you to calculate the preferred size based on the children.
-    /// 
+    ///
     fn preferred_size(&self, _view: &T) -> Size<Option<f64>> {
         Size::splat(None)
     }
@@ -59,11 +59,65 @@ pub trait VirtualLayoutManager<T>: Default {
     fn inspect_child(&mut self, _child: ChildRef, _with_frame: &Frame, _view: &T) {}
 }
 
+fn set_child_layout() {}
 // if possible this should not be a macro but an auto implement
 
+pub fn inspect_recurse<Data,Manager:VirtualLayoutManager<Data>>(
+    manager: &mut Manager,
+    index: &mut usize,
+    frame: &Frame,
+    data: &Data,
+    child: &dyn ComputableLayout,
+) {
+    if child.v_tables_len() == 0 {
+        manager.inspect_child(
+            ChildRef {
+                index: *index,
+                children_len: 0,
+                layout: child,
+            },
+            frame,
+            data,
+        );
+    } else {
+        let mut buf = Vec::new();
+        child.write_v_tables(&mut buf);
+        for child in buf.into_iter() {
+            inspect_recurse(manager, index, frame, data, child);
+        }
+    }
+}
+
+
+pub fn set_layout_recurse<Data,Manager:VirtualLayoutManager<Data>>(
+    manager: &mut Manager,
+    index: &mut usize,
+    frame: &Frame,
+    data: &Data,
+    child: &mut dyn ComputableLayout,
+) {
+    if child.v_tables_len() == 0 {
+        manager.set_layout_for_child(
+            Child {
+                index: *index,
+                children_len: 0,
+                layout: child,
+            },
+            frame,
+            data,
+        );
+    } else {
+        let mut buf = Vec::new();
+        child.write_v_tables_mut(&mut buf);
+        for child in buf.into_iter() {
+            set_layout_recurse(manager, index, frame, data, child);
+        }
+    }
+}
+
 ///
-/// automatically implement the boiler plate 
-/// 
+/// automatically implement the boiler plate
+///
 /// ## Usage example
 /// ```
 /// //here you write the data required to properly compute the layout
@@ -81,7 +135,7 @@ pub trait VirtualLayoutManager<T>: Default {
 ///     //here are the fields that user of your view will have to input
 ///     spacing:f64
 /// });
-/// 
+///
 /// ```
 #[macro_export]
 macro_rules! virtual_layout {
@@ -139,58 +193,21 @@ macro_rules! virtual_layout {
         impl<T: crate::view::collection::LayoutCollection> $rendered<T> {
 
             fn set_child_layout(&mut self){
-                self.children.with_v_tables(|tables|{
-                    let children_len:usize = tables.iter().map(|e|{let a = e.v_tables_len();if a ==0 {1}else{a}}).sum();
-                    let mut index: usize = 0;
-                    let mut manager:$layout = Default::default();
-                    for table in tables.iter() {
-                        let v_tables = table.v_tables();
-                        if v_tables.len() == 0 {
-                            let c = crate::view::virtual_layout::ChildRef{
-                                index,
-                                children_len,
-                                layout: *table,
-                            };
-                            manager.inspect_child(c, &self.frame,&self.data);
-                            index+=1;
-                        }else{
-                            //we only allow one level of recursion
-                            for child in v_tables.iter() {
-                                let c = crate::view::virtual_layout::ChildRef{
-                                    index,
-                                    children_len,
-                                    layout: *child,
-                                };
-                                manager.inspect_child(c, &self.frame,&self.data);
-                                index+=1;
-                            }
-                        }
-                    }
-                    for table in tables {
-                        let v_tables = table.v_tables_mut();
-                        if v_tables.len() == 0 {
-                            let c = crate::view::virtual_layout::Child{
-                                index,
-                                children_len,
-                                layout: *table,
-                            };
-                            manager.set_layout_for_child(c, &self.frame,&self.data);
-                            index+=1;
-                        }else{
-                            //we only allow one level of recursion
-                            for child in v_tables.iter_mut() {
-                                let c = crate::view::virtual_layout::Child{
-                                    index,
-                                    children_len,
-                                    layout: *child,
-                                };
-                                manager.set_layout_for_child(c, &self.frame,&self.data);
-                                index+=1;
-                            }
-                        }
-                    }
-                    self.preferred_size = crate::view::virtual_layout::PreferredSizeState::Initialized(manager.preferred_size(&self.data));
-                });
+                // while let Some(table) =
+                let mut buf = Vec::new();
+                self.children.write_v_tables_mut(&mut buf);
+
+                let mut manager:$layout = Default::default();
+                let mut index = 0usize;
+
+                for child in buf.iter() {
+                    inspect_recurse(&mut manager, &mut index, &self.frame, &self.data, *child);
+                }
+                index = 0;
+                for child in buf.iter_mut() {
+                    set_layout_recurse(&mut manager, &mut index, &self.frame, &self.data, *child);
+                }
+                self.preferred_size = crate::view::virtual_layout::PreferredSizeState::Initialized(manager.preferred_size(&self.data));
             }
         }
         impl<T: crate::view::collection::LayoutCollection> crate::layout::ComputableLayout for $rendered<T> {
@@ -204,38 +221,14 @@ macro_rules! virtual_layout {
                 match self.preferred_size {
                     crate::view::virtual_layout::PreferredSizeState::Initialized(a) => a,
                     crate::view::virtual_layout::PreferredSizeState::Uninitialized => {
-                        //perform layout calculation for first draw
-                        let mut preferred_size = Size::splat(None);
-                        self.children.with_v_tables_ref(|tables|{
-                            let children_len:usize = tables.iter().map(|e|{let a = e.v_tables_len();if a ==0 {1}else{a}}).sum();
-                            let mut index: usize = 0;
-                            let mut manager:$layout = Default::default();
-                            for table in tables.iter() {
-                                let v_tables = table.v_tables();
-                                if v_tables.len() == 0 {
-                                    let c = crate::view::virtual_layout::ChildRef{
-                                        index,
-                                        children_len,
-                                        layout: *table,
-                                    };
-                                    manager.inspect_child(c, &self.frame,&self.data);
-                                    index+=1;
-                                }else{
-                                    //we only allow one level of recursion
-                                    for child in v_tables.iter() {
-                                        let c = crate::view::virtual_layout::ChildRef{
-                                            index,
-                                            children_len,
-                                            layout: *child,
-                                        };
-                                        manager.inspect_child(c, &self.frame,&self.data);
-                                        index+=1;
-                                    }
-                                }
-                            }
-                            preferred_size = manager.preferred_size(&self.data);
-                        });
-                        preferred_size
+                        let mut index: usize = 0;
+                        let mut manager:$layout = Default::default();
+                        let mut buf = Vec::new();
+                        self.children.write_v_tables(&mut buf);
+                        for child in buf.iter() {
+                            inspect_recurse(&mut manager, &mut index, &self.frame, &self.data, *child);
+                        }
+                        manager.preferred_size(&self.data)
                     }
                 }
             }
