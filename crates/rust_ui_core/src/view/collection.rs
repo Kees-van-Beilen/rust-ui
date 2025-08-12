@@ -1,12 +1,20 @@
+
 use crate::layout::{ComputableLayout, RenderObject};
 use tuplex::IntoArray;
 
+/// A layout collection, represents a group of objects that implement [`ComputableLayout`].
+/// Layout collections are automatically implemented for tuples (with up to 16 elements) whose types implement [`ComputableLayout`]
 pub trait LayoutCollection {
+    /// Get a mutable reference to the [ComputableLayout]s in this collection
     fn with_v_tables(&mut self, f: impl FnOnce(&mut [&mut dyn ComputableLayout]));
+    /// Get a reference to the [ComputableLayout]s in this collection
     fn with_v_tables_ref(&self, f: impl FnOnce(&[&dyn ComputableLayout]));
 }
+/// A view collection, represents a group of objects that can be "rendered" into a [`LayoutCollection`]
+/// View collections are automatically implemented for tuples (with up to 16 elements) whose types implement [`RenderObject`]
 pub trait ViewCollection {
     type RenderOutput: LayoutCollection;
+    /// transform this collections into a [`LayoutCollection`]
     fn render(&self, data: crate::native::RenderData) -> Self::RenderOutput;
 }
 
