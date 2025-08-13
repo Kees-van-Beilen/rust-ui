@@ -32,10 +32,4 @@ pub trait MutableViewRerender {
     /// Rerender the mutable view attached to this
     /// 
     fn rerender(&self);
-    #[doc(hidden)]
-    #[deprecated]
-    fn enqueue_change(&self);
-    #[doc(hidden)]
-    #[deprecated]
-    fn flush_changes(&self);
 }

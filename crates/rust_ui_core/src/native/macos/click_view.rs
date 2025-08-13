@@ -1,5 +1,5 @@
 //custom view class that captures a on click event
-use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained, sel};
+use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained};
 use objc2_app_kit::NSView;
 use objc2_app_kit::NSEvent;
 use objc2_foundation::{MainThreadMarker, NSObjectProtocol};

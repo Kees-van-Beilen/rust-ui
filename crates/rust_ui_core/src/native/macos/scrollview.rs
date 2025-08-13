@@ -1,8 +1,10 @@
-use objc2::{AnyThread, MainThreadMarker, rc::Retained};
-use objc2_app_kit::{NSImageScaling, NSImageView, NSScrollerStyle};
-use objc2_quartz_core::{CALayer, kCAGravityResizeAspect, kCAGravityResizeAspectFill};
+use objc2::{MainThreadMarker, rc::Retained};
+use objc2_app_kit::NSScrollerStyle;
 
-use crate::{layout::Size, native::macos::nsview_setposition, views::{Axis, ScrollBehavior}};
+use crate::{
+    native::macos::nsview_setposition,
+    views::{Axis, ScrollBehavior},
+};
 
 pub struct NativeScrollView<Child: crate::layout::ComputableLayout> {
     ns_view: Retained<objc2_app_kit::NSScrollView>,
@@ -31,7 +33,7 @@ impl<T: crate::layout::RenderObject> crate::layout::RenderObject for crate::view
             //the document view is a view who's size is the preferred size
 
             let content_view = objc2_app_kit::NSView::new(mtm);
-            data.real_parent =  content_view.clone();
+            data.real_parent = content_view.clone();
 
             view.setDocumentView(Some(&content_view));
 
@@ -52,27 +54,27 @@ impl<T: crate::layout::ComputableLayout> crate::layout::ComputableLayout for Nat
         let mut child_size = to;
         if self.axis.x == ScrollBehavior::Scroll || self.axis.y == ScrollBehavior::Scroll {
             let preferred_size = self.child.preferred_size(&to);
-            dbg!(preferred_size);
             match (self.axis.x, preferred_size.width) {
-                (ScrollBehavior::Scroll, Some(width)) if width > to.width => child_size.width = width,
+                (ScrollBehavior::Scroll, Some(width)) if width > to.width => {
+                    child_size.width = width
+                }
                 _ => {}
             }
 
             match (self.axis.y, preferred_size.height) {
-                (ScrollBehavior::Scroll, Some(height)) if height > to.height => child_size.height = height,
+                (ScrollBehavior::Scroll, Some(height)) if height > to.height => {
+                    child_size.height = height
+                }
                 _ => {}
             }
         }
 
         unsafe { self.content_view.setFrameSize(child_size.into()) }
         self.child.set_size(child_size);
-
-        // println!("Scroll View Size {:?}, content size {:?}",to,child_size);
     }
 
     fn set_position(&mut self, to: crate::prelude::Position<f64>) {
         nsview_setposition(&self.ns_view, to);
-        // unsafe { self.ns_view.setFrameOrigin(to.into()) };
     }
 
     fn destroy(&mut self) {

@@ -1,5 +1,4 @@
 use objc2::{rc::Retained, AnyThread, MainThreadMarker};
-use objc2_app_kit::{NSImageScaling, NSImageView};
 use objc2_quartz_core::{kCAGravityResizeAspect, kCAGravityResizeAspectFill, CALayer};
 
 use crate::native::macos::NSViewRepresentable;

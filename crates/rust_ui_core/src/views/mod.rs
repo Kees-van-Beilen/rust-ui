@@ -11,6 +11,7 @@ pub mod text;
 pub mod image;
 pub mod scrollview;
 pub mod control_flows;
+pub mod textfield;
 
 //this becomes a native view
 pub struct ColorView(pub bevy_color::Color);
@@ -26,3 +27,4 @@ pub use tabbar::*;
 pub use text::*;
 pub use image::*;
 pub use scrollview::*;
+pub use textfield::TextField;

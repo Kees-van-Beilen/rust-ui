@@ -1,10 +1,6 @@
 use crate::{
     self as rust_ui,
-    layout::ComputableLayout,
-    view::{
-        collection::LayoutCollection,
-        virtual_layout::{inspect_recurse, set_layout_recurse, ChildRef, Frame},
-    },
+    view::virtual_layout::{inspect_recurse, set_layout_recurse},
 };
 use std::ops::Add;
 
@@ -21,7 +17,6 @@ virtual_layout!(HStack (HStackData,HStackPartialInit) => RenderedHStack (HStackL
 virtual_layout!(VStack (VStackData,VStackPartialInit) => RenderedVStack (VStackLayout) {
     spacing:f64
 });
-
 
 #[derive(Default, Debug)]
 pub struct HStackLayout {
@@ -56,7 +51,6 @@ impl VirtualLayoutManager<HStackData> for HStackLayout {
         with_frame: &crate::view::virtual_layout::Frame,
         data: &HStackData,
     ) {
-
         let portion = match child.layout.preferred_size(&with_frame.size).width {
             Some(width) => width,
             None if self.unallocated_units == 0 => with_frame.size.width,

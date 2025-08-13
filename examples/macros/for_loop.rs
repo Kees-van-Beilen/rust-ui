@@ -9,22 +9,40 @@ const COLORS:&[Color] = &[
 
 #[ui(main)]
 struct RootView {
+    #[state] text:String,
+    #[state] list:Vec<String>,
+
     body:_ = view!{
         
        VStack {
-            Spacer()
+            spacing: Some(10.0),
             HStack {
-                spacing:Some(21.0),
-
-
-                Spacer()
-                for color in COLORS.iter() {
-                        ColorView(*color)
-                            .frame(Frame::new(100.0,100.0))
+                TextField(bind!(text))
+                Button("Add to list") || {
+                    list.get_mut().push(text.get().clone());
+                    text.get_mut().clear();
                 }
-                Spacer()
             }
-            Spacer()
+
+
+            ScrollView {
+                y:Some(ScrollBehavior::Scroll),
+
+                VStack {
+                    spacing: Some(3.0),
+                    for item in list.get().iter() {
+                        Text(item)
+                            .margin(Margin::all(13.0))
+                            .background {
+                                ColorView(Color::BLACK)
+                            }
+                    }
+                }
+            }
+
+
+            
+
         }
     }
 }

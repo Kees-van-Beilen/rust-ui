@@ -5,10 +5,11 @@ mod button;
 mod image;
 mod click_view;
 mod scrollview;
+mod text_field;
 
 use crate::layout::ComputableLayout;
 use objc2_app_kit::NSView;
-use objc2_foundation::{NSPoint, NSSize};
+use objc2_foundation::{NSPoint};
 
 //all nsview reps auto participate in the layout manager
 //todo: this file should be split up
@@ -48,25 +49,24 @@ pub mod native {
 
     pub use super::image::*;
 
-    use std::{borrow::Cow, cell::RefCell, rc::Rc};
+    use std::{ cell::RefCell, rc::Rc};
 
     //views
     use objc2::{DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
     use objc2_app_kit::{
-        NSApplication, NSApplicationActivationPolicy, NSBezelStyle, NSFontWeight,
+        NSApplication, NSApplicationActivationPolicy, NSFontWeight,
         NSFontWeightBlack, NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight,
         NSFontWeightMedium, NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin,
         NSFontWeightUltraLight, NSTextAlignment, NSTextField, NSView,
     };
-    use objc2_core_graphics::CGColorCreateSRGB;
+    use objc2_core_graphics::{CGColor};
     use objc2_foundation::{NSPoint, NSString};
     use objc2_quartz_core::CALayer;
 
     use crate::{
         layout::{self, ComputableLayout, Position, RenderObject, Size},
         view::{
-            mutable::MutableViewRerender,
-            resources::{Resource, ResourceStack},
+            mutable::MutableViewRerender, persistent_storage::{PersistentStorageRef}, resources::{Resource, ResourceStack}
         },
         views::{FontFamily, FontSize, FontWeight, TextAlignment},
     };
@@ -78,7 +78,7 @@ pub mod native {
         parent: Retained<NSView>,
         layout_size: layout::Size<f64>,
         stack: crate::view::resources::Resources,
-        enqueue_rerender: bool
+        persistent_storage:PersistentStorageRef
     }
     impl<T: crate::view::mutable::MutableView> MutableViewRerender for Rc<RefCell<T>> {
         fn rerender(&self) {
@@ -90,25 +90,23 @@ pub mod native {
                 let render_data = {
                     let mut b = k.borrow_mut();
                     b.children.destroy();
+                    b.persistent_storage.borrow_mut().garbage_collection_unset_all();
                     let render_data = RenderData {
                         real_parent: b.parent.clone(),
+                        
+                        // persistent_storage:
                         //TODO: fix this clone to a ref
                         stack: crate::view::resources::ResourceStack::Owned(b.stack.clone()),
+                        persistent_storage: b.persistent_storage.clone(),
                     };
                     render_data
                 };
                 drop(data);
                 let _ = self.render(render_data);
             }
-        }
-        
-        fn enqueue_change(&self) {
-            // self.borrow_mut().set_changed();
-        }
-        
-        fn flush_changes(&self) {
-            if self.borrow_mut().read_changed() {
-                self.rerender();
+            //this needs to be done better
+            if let Some(a) = self.borrow().get_attached() {
+                a.borrow().persistent_storage.borrow_mut().garbage_collection_cycle();
             }
         }
         
@@ -126,7 +124,7 @@ pub mod native {
                 },
                 parent: data.real_parent,
                 stack: data.stack.as_ref().clone(),
-                enqueue_rerender:false
+                persistent_storage:data.persistent_storage.clone()
             }));
             let mut m = self.borrow_mut();
             let mut attached = m.get_mut_attached();
@@ -385,8 +383,7 @@ pub mod native {
             let mtm = MainThreadMarker::new().unwrap();
             let view = unsafe {
                 let view = NSView::new(mtm);
-                let color =
-                    CGColorCreateSRGB(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
+                let color = CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
                 let layer = CALayer::layer();
                 layer.setBackgroundColor(Some(&color));
                 view.setLayer(Some(&layer));
@@ -405,7 +402,10 @@ pub mod native {
     pub struct RenderData<'a> {
         pub real_parent: Retained<NSView>,
         pub stack: crate::view::resources::ResourceStack<'a>,
+        pub persistent_storage:PersistentStorageRef
     }
+
+
     impl<'a> RenderData<'a> {
         pub fn ament_with<T: Resource, F, K>(&mut self, element: T, with_fn: F) -> K
         where
@@ -415,6 +415,7 @@ pub mod native {
                 let d = RenderData {
                     real_parent: self.real_parent.clone(),
                     stack: ResourceStack::Borrow(stack_e),
+                    persistent_storage:self.persistent_storage.clone()
                 };
 
                 with_fn(d)

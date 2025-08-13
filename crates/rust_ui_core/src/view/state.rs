@@ -76,6 +76,12 @@ impl<T> PartialBinding<T> {
             queue: queue,
         }
     }
+
+    /// update the value in a binding and rerender
+    pub(crate) fn update_value(&self, value: T) {
+        self.data.replace(value);
+        self.updater.1();
+    }
 }
 
 ///
@@ -92,9 +98,10 @@ pub struct State<'a, T> {
 /// Partial bindings can be accessed in the `view!` body of a view.
 /// A partial binding is never mutable as otherwise ui code could trigger rerenders and cause a loop.
 ///
+#[derive(Clone)]
 pub struct PartialBinding<T> {
     data: Rc<RefCell<T>>,
-    updater: (*const u8, Box<dyn Fn()>),
+    updater: (*const u8, Rc<Box<dyn Fn()>>),
 }
 
 ///
@@ -203,7 +210,7 @@ impl<T> PartialState<T> {
             data: self.data.clone(),
             updater: (
                 Rc::as_ptr(&view) as *const u8,
-                Box::new(move || view.rerender()),
+                Rc::new(Box::new(move || view.rerender())),
             ),
         }
     }
@@ -243,7 +250,7 @@ impl<T> Default for PartialBinding<T> {
         //it is here as a patch for the `..Default::default()` behavior. However an assertion should happen at compile time for future versions of rust-ui
         Self {
             data: unsafe { Rc::new_uninit().assume_init() },
-            updater: (0 as *const u8, Box::new(|| {})),
+            updater: (0 as *const u8, Rc::new(Box::new(|| {}))),
         }
     }
 }

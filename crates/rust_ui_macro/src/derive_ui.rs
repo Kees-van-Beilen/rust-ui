@@ -1,6 +1,6 @@
 use std::{ cell::Cell, str::FromStr};
 
-use proc_macro::{token_stream::IntoIter, Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
+use proc_macro::{token_stream::IntoIter, Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
 pub(crate) enum UIClassification {
     Main,
@@ -196,6 +196,11 @@ pub fn get_struct_info(item: TokenStream) -> StructInfo {
     StructInfo { name, fields }
 }
 
+#[derive(Default)]
+pub struct UIContext {
+    identity_counter:usize
+}
+
 fn translate_rust_ui_closure(function_tokens:&mut TokenStream,function_args:&mut TokenStream,iter:&mut IntoIter)->TokenStream{
      while let Some(t) = iter.next() {
         match t {
@@ -250,7 +255,7 @@ fn translate_rust_ui_close_with_data(inner_function:TokenStream,outer_function:T
 }
 
 ///returns true if there are child view present
-fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream)->bool{
+fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream,context:&mut UIContext)->bool{
     // writer.extend([TokenTree::Group(Group::new(Delimiter::Brace, ))]);
     let mut fields = TokenStream::new();
     let mut children = TokenStream::new();
@@ -295,7 +300,7 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
                     },
                     Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => {
                         let mut body = TokenStream::new();
-                        translate_rust_ui_init_syntax(&mut body, g.stream(), data_ref_unpack);
+                        translate_rust_ui_init_syntax(&mut body, g.stream(), data_ref_unpack,context);
                         children.extend([
                             TokenTree::Punct(p),
                             TokenTree::Ident(attrib_name),
@@ -392,7 +397,7 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
                         let mut stream = TokenStream::from_str("collection.push").unwrap();
                         stream.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis, {
                             let mut body = TokenStream::new();
-                            translate_rust_ui_init_syntax(&mut body, block.stream(), data_ref_unpack);
+                            translate_rust_ui_init_syntax(&mut body, block.stream(), data_ref_unpack,context);
                             body
                         }))]);
                         stream
@@ -413,7 +418,7 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
                 parsing_fields = false;
                 started_children = true;
                 //child
-                translate_rust_ui_init_syntax_view(&mut children, ident, g,data_ref_unpack);
+                translate_rust_ui_init_syntax_view(&mut children, ident, g,data_ref_unpack,context);
             }
             Some(TokenTree::Punct(p)) if p.as_char() == ':' && parsing_fields => {
                 //fields
@@ -450,7 +455,7 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
 
 }
 
-fn translate_rust_ui_init_syntax_view(writer:&mut TokenStream,name:Ident,group:Group,data_ref_unpack:&TokenStream){
+fn translate_rust_ui_init_syntax_view(writer:&mut TokenStream,name:Ident,group:Group,data_ref_unpack:&TokenStream,context:&mut UIContext){
     match group.delimiter() {
         Delimiter::Parenthesis => {
             writer.extend([
@@ -462,7 +467,12 @@ fn translate_rust_ui_init_syntax_view(writer:&mut TokenStream,name:Ident,group:G
                     let mut s = TokenStream::from_str("#[allow(unused_parens)]").unwrap();
                     s.extend([TokenTree::Group(group),]);
                     s
-                }))
+                })),
+                TokenTree::Punct(Punct::new('.', Spacing::Alone)),
+                TokenTree::Ident(Ident::new("set_identity", Span::call_site())),
+                TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
+                    TokenTree::Literal(Literal::usize_unsuffixed(context.identity_counter))
+                ])))
             ]);
         },
         Delimiter::Brace => {
@@ -477,22 +487,28 @@ fn translate_rust_ui_init_syntax_view(writer:&mut TokenStream,name:Ident,group:G
                         TokenTree::Ident(name.clone()),
                     ]);
                     let mut temp_stream = TokenStream::new();
-                    if translate_rust_ui_init_syntax_partial_init(&mut temp_stream,group.stream(),data_ref_unpack) {
+                    if translate_rust_ui_init_syntax_partial_init(&mut temp_stream,group.stream(),data_ref_unpack,context) {
                         s.extend(TokenStream::from_str("<_> as ::rust_ui::PartialInitialisable>::PartialInit"));
                     }else {
                         s.extend(TokenStream::from_str(" as ::rust_ui::PartialInitialisable>::PartialInit"));
                     }
                     s.extend(temp_stream);
                     s
-                }))
+                })),
+                TokenTree::Punct(Punct::new('.', Spacing::Alone)),
+                TokenTree::Ident(Ident::new("set_identity", Span::call_site())),
+                TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
+                    TokenTree::Literal(Literal::usize_unsuffixed(context.identity_counter))
+                ])))
             ]);
+            context.identity_counter += 1;
         },
         e=>panic!("unexpected {:?}",e)
     }
 }
 
 
-fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream){
+fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream,context:&mut UIContext){
     //a top level item is either:
     // - a single view
     // - or a single view wrapped around {}
@@ -503,7 +519,7 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
             // <name as ::rust_ui::PartialInitialisable>::PartialInit
             //next token must be: () or {}
             let Some(TokenTree::Group(group)) = iter.next() else {panic!("13")};
-            translate_rust_ui_init_syntax_view(writer,name,group,data_ref_unpack);
+            translate_rust_ui_init_syntax_view(writer,name,group,data_ref_unpack,context);
             // writer.extend(iter);
             //we might have some . or || properties we need to handle
             while let Some(next) = iter.next() {
@@ -539,7 +555,7 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
                             }
                             Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => {
                                 let mut body = TokenStream::new();
-                                translate_rust_ui_init_syntax(&mut body, g.stream(), data_ref_unpack);
+                                translate_rust_ui_init_syntax(&mut body, g.stream(), data_ref_unpack,context);
                                 writer.extend([
                                     TokenTree::Punct(p),
                                     TokenTree::Ident(ident),
@@ -572,7 +588,7 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
         },
         Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => {
             let mut stream = TokenStream::new();
-            translate_rust_ui_init_syntax(&mut stream,g.stream(),data_ref_unpack);
+            translate_rust_ui_init_syntax(&mut stream,g.stream(),data_ref_unpack,context);
             // stream.extend(iter);
 
             writer.extend([
@@ -603,7 +619,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
     let mut children_fn_body_unwrapped = TokenStream::new();
     let mut children_fn_body_final_part = TokenStream::new();
 
-    children_fn_body_unwrapped.extend(TokenStream::from_str("let data_ref = data.borrow();").unwrap());
+    children_fn_body_unwrapped.extend(TokenStream::from_str("use ::rust_ui::layout::RenderObject;let data_ref = data.borrow();").unwrap());
 
     let mut data_ref_unpack = TokenStream::new();
     
@@ -617,7 +633,8 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                 let Some(TokenTree::Punct(p)) = iter.next() else {panic!("21")};
                 assert!(ident.to_string()=="view");
                 assert!(p.as_char()=='!');
-                translate_rust_ui_init_syntax(&mut children_fn_body_final_part, TokenStream::from_iter(iter),&data_ref_unpack);
+                let mut context = UIContext::default();
+                translate_rust_ui_init_syntax(&mut children_fn_body_final_part, TokenStream::from_iter(iter),&data_ref_unpack,&mut context);
             }
             StructField::Field {
                 name,

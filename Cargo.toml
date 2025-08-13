@@ -16,32 +16,32 @@ members = ["crates/rust_ui_core", "crates/rust_ui_macro"]
 
 
 
-[dependencies]
-bevy_color = {version="0.15.4",default-features = false}
-clone_dyn = "0.43.0"
-log = "0.4.27"
-syslog = "7.0.0"
-tuplex = "0.1.2"
-rust_ui_core = {path = "crates/rust_ui_core"}
-rust_ui_macro = {path = "crates/rust_ui_macro"}
+# [dependencies]
+# bevy_color = {version="0.15.4",default-features = false}
+# clone_dyn = "0.43.0"
+# log = "0.4.27"
+# syslog = "7.0.0"
+# tuplex = "0.1.2"
+# rust_ui_core = {path = "crates/rust_ui_core"}
+# rust_ui_macro = {path = "crates/rust_ui_macro"}
 
 
-[target.'cfg(target_os = "macos")'.dependencies]
-block2 = "0.6.1"
-objc2 = "0.6.0"
-objc2-app-kit = "0.3.0"
-objc2-core-graphics = "0.3.0"
-objc2-foundation = "0.3.0"
-objc2-quartz-core = "0.3.0"
+# [target.'cfg(target_os = "macos")'.dependencies]
+# block2 = "0.6.1"
+# objc2 = "0.6.0"
+# objc2-app-kit = "0.3.0"
+# objc2-core-graphics = "0.3.0"
+# objc2-foundation = "0.3.0"
+# objc2-quartz-core = "0.3.0"
 
-[target.'cfg(target_os = "ios")'.dependencies]
-block2 = "0.6.1"
-objc2 = "0.6.0"
-objc2-core-graphics = "0.3.0"
-objc2-foundation = "0.3.0"
-objc2-quartz-core = "0.3.0"
-objc2-ui-kit = "0.3.1"
-objc2-os-log = "0.3.1"
+# [target.'cfg(target_os = "ios")'.dependencies]
+# block2 = "0.6.1"
+# objc2 = "0.6.0"
+# objc2-core-graphics = "0.3.0"
+# objc2-foundation = "0.3.0"
+# objc2-quartz-core = "0.3.0"
+# objc2-ui-kit = "0.3.1"
+# objc2-os-log = "0.3.1"
 
 [[example]]
 name = "calculator"

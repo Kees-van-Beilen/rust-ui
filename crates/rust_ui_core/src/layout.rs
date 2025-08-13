@@ -6,8 +6,8 @@ pub struct Size<T> {
     pub height: T,
 }
 
-impl<T:Copy> Size<T> {
-    pub fn splat(value:T)->Self {
+impl<T: Copy> Size<T> {
+    pub fn splat(value: T) -> Self {
         Self {
             width: value,
             height: value,
@@ -26,7 +26,10 @@ pub trait ComputableLayout {
     fn set_size(&mut self, to: Size<f64>);
     ///this must cascade down to the children
     fn set_position(&mut self, to: Position<f64>);
-    ///remove this view and its descendants
+    /// Remove this view and its descendants
+    /// This should call the same method on any child views.
+    /// views that need to continue focus can opt to not remove itself from the parent view.
+    /// instead register a delayed removal
     fn destroy(&mut self);
     ///a layout may contain dynamic elements.
     ///in that case we off course want to iterate over them
@@ -46,10 +49,10 @@ pub trait ComputableLayout {
         0
     }
 
-    fn write_v_tables<'a,'b>(&'a self,_buf:&'b mut Vec<&'a dyn ComputableLayout>) {
+    fn write_v_tables<'a, 'b>(&'a self, _buf: &'b mut Vec<&'a dyn ComputableLayout>) {
         //by default a layout is just one element, so there is nothing dynamic to write
     }
-    fn write_v_tables_mut<'a,'b>(&'a mut self,_buf:&'b mut Vec<&'a mut dyn ComputableLayout>) {
+    fn write_v_tables_mut<'a, 'b>(&'a mut self, _buf: &'b mut Vec<&'a mut dyn ComputableLayout>) {
         //by default a layout is just one element, so there is nothing dynamic to write
     }
 
@@ -61,7 +64,7 @@ pub trait ComputableLayout {
     ///  1. check the preferred size
     ///  2. if the layout manager wants a smaller size, then check the min_size
     ///  3. if the layout manager needs a bigger size, then check max_size
-    /// 
+    ///
     /// The preferred size doesn't have to be bounded by the frame, the `in_frame` is merely a suggestion
     fn preferred_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
         Size::splat(None)
@@ -74,8 +77,15 @@ pub trait ComputableLayout {
         Size::splat(None)
     }
 }
-pub trait RenderObject {
+
+pub trait RenderObject: Sized {
     type Output: ComputableLayout;
     ///create a native view
     fn render(&self, data: native::RenderData) -> Self::Output;
+
+    /// When the identity of a view is set, it enables persistent views
+    fn set_identity(self, _identity: usize) -> Self {
+        //by default views are opted out of the identity system
+        self
+    }
 }
