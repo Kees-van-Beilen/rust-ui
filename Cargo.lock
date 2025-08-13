@@ -69,9 +69,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clone_dyn"
-version = "0.43.0"
+version = "0.44.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1198bc16299c19d139a1df91e5b45929ebe231d4cd36dc9442175c3094dcaa9"
+checksum = "d5912726fdac3664d2e21154d3973a8bfb7d4ac77c307587706c7e4f17697d23"
 dependencies = [
  "clone_dyn_meta",
  "clone_dyn_types",
@@ -79,9 +79,9 @@ dependencies = [
 
 [[package]]
 name = "clone_dyn_meta"
-version = "0.40.0"
+version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20a14bac215dde248ec40e887b0519c4a0310e66f9d4223ddc886cc06e3d3b58"
+checksum = "d9ecec9c6fd0183a15ea7a98149b36bcbff675318e344ceae92ff04697379e7b"
 dependencies = [
  "component_model_types",
  "macro_tools",
@@ -95,15 +95,15 @@ checksum = "ec3ea6a6cad557cf4394aecff2bda6266914123ad9c46a9cb1c576b10f80438f"
 
 [[package]]
 name = "collection_tools"
-version = "0.24.0"
+version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18fcc56615bb63dd4ae547b1ff7dc13e961179c722580a23a6a87aa32c1d00e1"
+checksum = "19a580a83b3bf991e8c27f55a3fc853cbc37bb53f814d113ca2c4d856e2bdc76"
 
 [[package]]
 name = "component_model_types"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "316c41f2534ea0b83adbfc97dd1a085ac685c4b3e02c1d4f861152554582e42a"
+checksum = "db48db827fc832b9ccdbf6ccdccc9387e2e48aeb3bff7db0fdc86afe38b5a83b"
 dependencies = [
  "collection_tools",
 ]
@@ -294,9 +294,9 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "macro_tools"
-version = "0.66.0"
+version = "0.67.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c408c59a48c1dcb43b2f9b147279d2c029caef846ed756a733b0cad594868a14"
+checksum = "3a6e3e25f0820a12c92d0a7b50980ea632579421383e7240041f7630164571b2"
 dependencies = [
  "clone_dyn_types",
  "component_model_types",
