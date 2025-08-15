@@ -414,9 +414,12 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
                     TokenTree::Ident(Ident::new("with_capture_callback", Span::call_site())),
                     TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
                         translate_rust_ui_close_with_data(inner_function, outer_function, data_ref_unpack, func_args_inner),
+                        TokenTree::Punct(Punct::new(',', Spacing::Alone)),
+                        TokenTree::Literal(Literal::usize_unsuffixed(context.identity_counter))
                     ])))
                     
                 ]);
+                context.identity_counter+=1;
                 // children.extend([TokenTree::Group(Group::new(Delimiter::Brace, bracket_stream))]);
 
                 continue;
@@ -618,9 +621,13 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
                             TokenTree::Ident(Ident::new("with_capture_callback", Span::call_site())),
                             TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from_iter([
                                 translate_rust_ui_close_with_data(inner_function, outer_function, data_ref_unpack, func_args_inner),
-                            ])))
+                                  TokenTree::Punct(Punct::new(',', Spacing::Alone)),
+                            TokenTree::Literal(Literal::usize_unsuffixed(context.identity_counter))
+                            ]))),
+                          
                             
                         ]);
+                        context.identity_counter+=1;
 
                     },
                     TokenTree::Punct(p) if p.as_char() == '.' => {

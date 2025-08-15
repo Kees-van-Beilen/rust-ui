@@ -6,6 +6,7 @@ mod image;
 mod click_view;
 mod scrollview;
 mod text_field;
+mod sheet;
 
 use crate::layout::ComputableLayout;
 use objc2_app_kit::NSView;

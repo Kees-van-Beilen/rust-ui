@@ -56,7 +56,7 @@ impl Button {
     /// Use in the `#[ui]` macro to assign the button a callback. Do not call manually.
     /// 
     #[doc(hidden)]
-    pub fn with_capture_callback(mut self,callback:impl Fn()+'static)->Self {
+    pub fn with_capture_callback(mut self,callback:impl Fn()+'static,_identity:usize)->Self {
         self.callback = RefCell::new(Box::new(callback));
         self
     }

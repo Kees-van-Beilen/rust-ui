@@ -9,7 +9,7 @@ pub trait OnTapModifier: Sized + RenderObject {
 }
 
 impl<C: RenderObject> OnTapView<C> {
-    pub fn with_capture_callback(mut self, func: impl Fn() + 'static) -> Self {
+    pub fn with_capture_callback(mut self, func: impl Fn() + 'static,_identity:usize) -> Self {
         self.1 = RefCell::new(Box::new(func));
         self
     }
