@@ -551,6 +551,10 @@ dependencies = [
 [[package]]
 name = "rust-ui"
 version = "0.0.1"
+dependencies = [
+ "rust_ui_core",
+ "rust_ui_macro",
+]
 
 [[package]]
 name = "rust_ui_core"

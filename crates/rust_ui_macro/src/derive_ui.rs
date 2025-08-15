@@ -253,6 +253,77 @@ fn translate_rust_ui_close_with_data(inner_function:TokenStream,outer_function:T
                             s
                         }))
 }
+#[derive(Default)]
+
+struct MatchArm {
+    pattern:TokenStream,
+    body:TokenStream
+}
+fn translate_rust_ui_match_syntax(match_ident:Ident,writer:&mut TokenStream,iter:&mut IntoIter,data_ref_unpack:&TokenStream,context:&mut UIContext) {
+    let mut match_expr = TokenStream::new();
+    while let Some(token) =  iter.next() {
+        match token {
+            TokenTree::Group(g) if g.delimiter() == Delimiter::Brace => {
+                let mut arms = vec![];
+                let mut iter = g.stream().into_iter();
+                //parse match arms
+                loop {
+                    
+                    //pattern before "=>"
+                    let mut arm = MatchArm::default();
+                    let mut did_write_pattern = false;
+                    while let Some(p) =iter.next() {
+                        if let TokenTree::Punct(eq) = p.clone() && eq.as_char() == '=' {
+                            let p = iter.next();
+                            if let Some(TokenTree::Punct(arrow)) = p.clone() && arrow.as_char() == '>' {
+                                did_write_pattern = true;
+                                break;
+                                
+                            }
+                            arm.pattern.extend(p);
+                        }else {
+                            arm.pattern.extend([p]);
+                        }
+                    }
+                    if !did_write_pattern {
+                        break;
+                    }
+                    //expr after "=>"
+                    let peek = iter.next();
+                    if let Some(TokenTree::Group(g)) = peek.clone() && g.delimiter() == Delimiter::Brace {
+                        arm.body.extend(peek);
+                    }else {
+                        arm.body.extend(peek);
+                        while let Some(p) =iter.next()  {
+                            match p {
+                                TokenTree::Punct(p) if p.as_char() == ',' => break,
+                                p => arm.body.extend([p]),
+                            }
+                        }
+                    }
+                    arms.push(arm);
+                }
+                //output the new match statement
+                writer.extend([TokenTree::Ident(match_ident)]);
+                writer.extend(match_expr);
+                writer.extend({
+                    let mut stream = TokenStream::new();
+                    for arm in arms {
+                        stream.extend(arm.pattern);
+                        stream.extend(TokenStream::from_str("=>").unwrap());
+                        // let mut sub = TokenStream::new();
+                        translate_rust_ui_init_syntax(&mut stream, arm.body, data_ref_unpack, context);
+                        // stream.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis, sub))]);
+                        stream.extend(TokenStream::from_str(",").unwrap());
+                    }
+                    [TokenTree::Group(Group::new(Delimiter::Brace, stream))]
+                });
+                return;
+            },
+            e => match_expr.extend([e]),
+        }
+    }
+}
 
 ///returns true if there are child view present
 fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream,context:&mut UIContext)->bool{
@@ -410,6 +481,10 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
             }
             continue;
         }
+        if ident.to_string() == "match" {
+            translate_rust_ui_match_syntax(ident, writer, &mut iter, data_ref_unpack, context);
+            continue;
+        }
         match iter.next() {
             Some(TokenTree::Group(g)) if g.delimiter() != Delimiter::Bracket => {
                 if started_children {
@@ -507,7 +582,7 @@ fn translate_rust_ui_init_syntax_view(writer:&mut TokenStream,name:Ident,group:G
     }
 }
 
-
+/// parse the top level view
 fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream,context:&mut UIContext){
     //a top level item is either:
     // - a single view
@@ -515,6 +590,11 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
     let mut iter = input.into_iter();
     match iter.next() {
         Some(TokenTree::Ident(name)) => {
+
+            if name.to_string() == "match" {
+                translate_rust_ui_match_syntax(name, writer, &mut iter, data_ref_unpack, context);
+                return;
+            }
             // assert!(name.to_string().chars().next().unwrap().is_lowercase()
             // <name as ::rust_ui::PartialInitialisable>::PartialInit
             //next token must be: () or {}

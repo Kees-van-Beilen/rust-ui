@@ -42,7 +42,7 @@
 //! 
 //! 
 
-extern crate rust_ui_core;
+// extern crate rust_ui_core;
 
 pub use rust_ui_core::{
     layout,
