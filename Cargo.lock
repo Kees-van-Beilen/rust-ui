@@ -69,9 +69,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clone_dyn"
-version = "0.43.0"
+version = "0.45.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1198bc16299c19d139a1df91e5b45929ebe231d4cd36dc9442175c3094dcaa9"
+checksum = "9b9684d9bd747bb7279a3b61f4cd2348c327978e9fa546bd7698779182973d78"
 dependencies = [
  "clone_dyn_meta",
  "clone_dyn_types",
@@ -79,9 +79,9 @@ dependencies = [
 
 [[package]]
 name = "clone_dyn_meta"
-version = "0.40.0"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20a14bac215dde248ec40e887b0519c4a0310e66f9d4223ddc886cc06e3d3b58"
+checksum = "74d775e1643538367c06ada251a499ec5f1f9437c3d565a86bc96a8f1ddb885d"
 dependencies = [
  "component_model_types",
  "macro_tools",
@@ -89,21 +89,21 @@ dependencies = [
 
 [[package]]
 name = "clone_dyn_types"
-version = "0.38.0"
+version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec3ea6a6cad557cf4394aecff2bda6266914123ad9c46a9cb1c576b10f80438f"
+checksum = "4c635cca9712c6ccc6b91deeb0f13b1914564da331f9eaeaf2263346bf620a4b"
 
 [[package]]
 name = "collection_tools"
-version = "0.24.0"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18fcc56615bb63dd4ae547b1ff7dc13e961179c722580a23a6a87aa32c1d00e1"
+checksum = "85e909613c43d6f6f4101d62f71d0cf2e968b0aa3024c855aad615de6a15f8b1"
 
 [[package]]
 name = "component_model_types"
-version = "0.10.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "316c41f2534ea0b83adbfc97dd1a085ac685c4b3e02c1d4f861152554582e42a"
+checksum = "9958aa440fa1816463cd8759c9ad26e99189384997e91e0dd2e217a79ebebfc5"
 dependencies = [
  "collection_tools",
 ]
@@ -242,15 +242,15 @@ dependencies = [
 
 [[package]]
 name = "interval_adapter"
-version = "0.36.0"
+version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33c6971db50179366f38ededa9cf1c52cec6be9e3fbca5f5101dbc997a798da6"
+checksum = "0ee6a61b55efffcd59d786b3339b3186b2f13c3e93ea0aba788556ed7ce38c8d"
 
 [[package]]
 name = "iter_tools"
-version = "0.37.0"
+version = "0.38.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e68442ead22fbfa506eaa0b613826a373594f86e1e5be6db2d2d1dc1189420e8"
+checksum = "f962a91f88527c487cf01f7a18fc3fadbca363ebe28211a27e365ceee02578d3"
 dependencies = [
  "clone_dyn_types",
  "itertools 0.11.0",
@@ -294,9 +294,9 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "macro_tools"
-version = "0.66.0"
+version = "0.68.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c408c59a48c1dcb43b2f9b147279d2c029caef846ed756a733b0cad594868a14"
+checksum = "b89bdd32946ff70e85fd87412c548bd67c016531fb91036c66922b49ac2a4292"
 dependencies = [
  "clone_dyn_types",
  "component_model_types",
