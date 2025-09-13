@@ -61,9 +61,8 @@ impl<T: crate::layout::ComputableLayout> crate::layout::ComputableLayout for Nat
 
         let mut child_size = to;
         if self.axis.x == ScrollBehavior::Scroll || self.axis.y == ScrollBehavior::Scroll {
-            println!("Call pref size");
+
             let preferred_size = self.child.preferred_size(&to);
-            dbg!(preferred_size);
             match (self.axis.x, preferred_size.width) {
                 (ScrollBehavior::Scroll, Some(width)) if width > to.width => {
                     child_size.width = width

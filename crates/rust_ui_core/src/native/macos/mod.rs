@@ -87,7 +87,7 @@ pub mod native {
     }
     impl<T: crate::view::mutable::MutableView+'static> MutableViewRerender for Rc<RefCell<T>> {
         fn rerender(&self) {
-            println!("{} |> rerender",type_name::<T>());
+
 
             //This entire rerender logic is a piece of shit
             //the entire idea of these mutable views have to
@@ -151,37 +151,15 @@ pub mod native {
 
 
 
-            println!("{} |> render (from buffer: {:?})",type_name::<T>(),resume_storage);
 
 
             //we need to copy the state from the last 
             if !Rc::ptr_eq(self, self_container){
+                // this code will execute iff the something else is rerendering this view in the same
+                // frame that this view's state is updated.
+                // this happens when a view updates a binding and a state variable at the same time
                 self_container.borrow().clone_bindings(&mut self.borrow_mut());
-                
             }
-                //     // self.borrow()
-            //     // this is the situation:
-            //     //  A parent view is rerendered and whilst rerendering rendered this view.
-            //     //  however this new render loses all the bindings etc of the old view.
-
-            //     // 
-            //     // println!("track borrow {:?} {identity} {:?}",Rc::as_ptr(self_container),self_container.try_borrow_mut().is_ok());
-            //     println!("{} |> try swap pointers",type_name::<T>());
-            
-            //     if self_container.try_borrow_mut().is_ok() {
-            //         self.swap(self_container);
-            //         println!("{} |> swapped pointers",type_name::<T>());
-            //     }
-
-            //     //  this also means that self_container is already borrowed mut
-            //     // std::mem::swap(x, y);
-            //     // *self.borrow_mut().get_mut_attached() = self_container.borrow().get_attached().clone();
-            //     // self.borrow().get_attached().as_ref().unwrap().swap(self_container.borrow().get_attached().as_ref().unwrap());
-            //     // println!("{:?} vs {:?}",Rc::as_ptr(self),Rc::as_ptr(self_container));
-            //     // dbg!((self.try_borrow_mut().is_ok(),self_container.try_borrow_mut().is_ok()));
-            //     // self.swap(self_container);
-            // }
-
 
 
 
@@ -219,7 +197,6 @@ pub mod native {
             } else {
                 *attached = Some(view.clone());
             }
-            println!("| end {:?}",Rc::as_ptr(self));
 
             m.get_attached().clone().unwrap()
         }
