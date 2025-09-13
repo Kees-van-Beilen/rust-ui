@@ -8,6 +8,12 @@ pub(crate) enum UIClassification {
     PureView,
 }
 
+const BIND_MACRO:&str = "macro_rules! bind {
+    ($state:expr) => {
+        ::rust_ui::view::state::AsPartiBinding::as_partial_binding($state,data.clone())
+    };
+};";
+
 impl UIClassification {
     pub fn from_ts(ts: TokenStream) -> Self {
         let mut iter = ts.into_iter();
@@ -198,7 +204,8 @@ pub fn get_struct_info(item: TokenStream) -> StructInfo {
 
 #[derive(Default)]
 pub struct UIContext {
-    identity_counter:usize
+    identity_counter:usize,
+    top_level_view_unpack:TokenStream
 }
 
 fn translate_rust_ui_closure(function_tokens:&mut TokenStream,function_args:&mut TokenStream,iter:&mut IntoIter)->TokenStream{
@@ -325,6 +332,43 @@ fn translate_rust_ui_match_syntax(match_ident:Ident,writer:&mut TokenStream,iter
     }
 }
 
+///
+/// .modifier() {/* this is a capture callback view */}
+/// View() {/*this to */}
+/// View{} {/*and this */}
+/// 
+/// but not this:
+/// .modifier{}
+/// 
+/// This will translate to
+/// .with_capture_callback({
+///     let data = data.clone()
+///     move || {
+///         /* top level view init statement */
+///         /* view init */
+///     }
+/// },identity_counter++)
+fn translate_rust_ui_capture_callback_view(writer:&mut TokenStream,body:TokenStream,data_ref_unpack:&TokenStream,context:&mut UIContext){
+    writer.extend(TokenStream::from_str(".with_capture_callback")); 
+    let mut inner = TokenStream::new();
+    let mut block = TokenStream::new();
+    block.extend(context.top_level_view_unpack.clone());
+    translate_rust_ui_init_syntax(&mut block, body, data_ref_unpack, context);
+    inner.extend([
+        TokenTree::Group(Group::new(Delimiter::Brace, {
+            let mut stream = TokenStream::from_str("let data = data.clone(); move ||").unwrap();
+            stream.extend([TokenTree::Group(Group::new(Delimiter::Brace, block))]);
+            stream
+        })),
+        TokenTree::Punct(Punct::new(',', Spacing::Alone)),
+        TokenTree::Literal(Literal::usize_unsuffixed(context.identity_counter))
+    ]);
+    writer.extend([
+        TokenTree::Group(Group::new(Delimiter::Parenthesis,inner))
+    ]);
+    context.identity_counter+=1;
+}
+
 ///returns true if there are child view present
 fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:TokenStream,data_ref_unpack:&TokenStream,context:&mut UIContext)->bool{
     // writer.extend([TokenTree::Group(Group::new(Delimiter::Brace, ))]);
@@ -396,6 +440,10 @@ fn translate_rust_ui_init_syntax_partial_init(writer:&mut TokenStream,input:Toke
                 }
                 continue;
             },
+            TokenTree::Group(g) if g.delimiter() == Delimiter::Brace => {
+                translate_rust_ui_capture_callback_view(&mut children, g.stream(), data_ref_unpack, context);
+                continue;
+            }
             //trailing callback modifier i.e.
             // Button("hello world") || {
             //    println!("pressed");
@@ -590,6 +638,8 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
     //a top level item is either:
     // - a single view
     // - or a single view wrapped around {}
+
+
     let mut iter = input.into_iter();
     match iter.next() {
         Some(TokenTree::Ident(name)) => {
@@ -711,6 +761,8 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
     let mut data_ref_unpack = TokenStream::new();
     
 
+    let mut clone_bindings_inner = TokenStream::new();
+
     for field in info.fields.iter() {
         match field {
             StructField::Body { initializer } => {
@@ -721,6 +773,8 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                 assert!(ident.to_string()=="view");
                 assert!(p.as_char()=='!');
                 let mut context = UIContext::default();
+                context.top_level_view_unpack = children_fn_body_unwrapped.clone();
+                context.top_level_view_unpack.extend(TokenStream::from_str(BIND_MACRO).unwrap());
                 translate_rust_ui_init_syntax(&mut children_fn_body_final_part, TokenStream::from_iter(iter),&data_ref_unpack,&mut context);
             }
             StructField::Field {
@@ -842,6 +896,20 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                 initializer,
                 ty,
             } => {
+                clone_bindings_inner.extend([
+                    ident!("into"),
+                    punct!('.'),
+                    TokenTree::Ident(name.clone()),
+                    punct!('='),
+                    ident!("self"),
+                    punct!('.'),
+                    TokenTree::Ident(name.clone()),
+                    punct!('.'),
+                    ident!("clone"),
+                    TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::new())),
+                    punct!(';'),
+                    
+                ]);
                 body.extend([TokenTree::Ident(name.clone()), punct!(':')]);
                 body.extend(TokenStream::from_str("::rust_ui::view::state::PartialState<").unwrap());
                 body.extend(ty.clone());
@@ -920,10 +988,12 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
     }
 
     body.extend(TokenStream::from_str(
-        "view: ::std::option::Option<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>",
+        "view: ::std::option::Option<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>, 
+        identity:usize",
     ));
     init_fn_body.extend(TokenStream::from_str(
-        "view: ::std::option::Option::<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>::None",
+        "view: ::std::option::Option::<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>::None,
+        identity: 0usize",
     ));
 
     writer.extend([
@@ -1112,11 +1182,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
         ])))
     ]);
     //Inject the bind! macro. This method is type safe :) yeah
-    children_fn_body_unwrapped.extend(TokenStream::from_str("macro_rules! bind {
-    ($state:ident) => {
-        ::rust_ui::view::state::PartialState::as_binding($state,data.clone())
-    };
-};").unwrap());
+    children_fn_body_unwrapped.extend(TokenStream::from_str(BIND_MACRO).unwrap());
 
     children_fn_body_unwrapped.extend(children_fn_body_final_part);
 
@@ -1148,7 +1214,18 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
 
     fn get_mut_attached(&mut self) -> &mut ::std::option::Option<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>> {
          &mut self.view
-    }"));
+    }
+    fn set_identity(&mut self,identity:usize) {
+        self.identity = identity;
+    }
+    fn get_identity(&self)->usize {
+        self.identity
+    }
+    fn clone_bindings(&self, into:&mut Self) 
+    "));
+            s.extend([
+                TokenTree::Group(Group::new(Delimiter::Brace, clone_bindings_inner))
+            ]);
             s
         }))
     ]);

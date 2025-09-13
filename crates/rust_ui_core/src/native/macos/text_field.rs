@@ -1,15 +1,17 @@
+use std::ops::Deref;
+
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained};
 use objc2_app_kit::NSTextField;
 use objc2_foundation::{NSNotification, NSPoint, NSString};
 
 use crate::{
     layout::{ComputableLayout, RenderObject},
-    view::state::PartialBinding,
+    view::state::{ PartialAnyBinding, PartialBinding, PartialBindingBox},
     views::TextField,
 };
 
 pub struct RustTextFieldIVars {
-    binding: PartialBinding<String>,
+    binding: PartialBindingBox<String>,
 }
 
 define_class!(
@@ -45,7 +47,7 @@ define_class!(
 impl RustTextField {
     pub unsafe fn new(
         mtm: MainThreadMarker,
-        binding: PartialBinding<String>,
+        binding: PartialBindingBox<String>
     ) -> Retained<RustTextField> {
         let this = Self::alloc(mtm).set_ivars(RustTextFieldIVars { binding });
         msg_send![super(this), init]
@@ -73,6 +75,7 @@ impl RenderObject for TextField {
         data.persistent_storage
             .borrow_mut()
             .garbage_collection_mark_used(identity);
+
         unsafe {
             if let Some(view) = data
                 .persistent_storage
@@ -88,7 +91,8 @@ impl RenderObject for TextField {
                 NativeTextField { ns_view }
             } else {
                 let mtm = MainThreadMarker::new().unwrap();
-                let ns_view = RustTextField::new(mtm, self.text_binding.clone());
+                // let bo = clone_dyn::clone_into_box(&self.text_binding);
+                let ns_view = RustTextField::new(mtm, self.text_binding.clone_box());
                 let str = NSString::from_str(self.text_binding.get().as_str());
                 ns_view.setStringValue(&str);
                 {
@@ -123,6 +127,11 @@ impl ComputableLayout for NativeTextField {
         let y = super_view.frame().size.height - to.y - view.frame().size.height;
 
         unsafe { view.setFrameOrigin(NSPoint { x: to.x, y: y }) };
+    }
+    fn preferred_size(&self, in_frame: &crate::prelude::Size<f64>) -> crate::prelude::Size<Option<f64>> {
+        let mut s: crate::prelude::Size<Option<f64>> = unsafe { self.ns_view.sizeThatFits((*in_frame).into()) }.into();
+        s.width = None;
+        s
     }
 
     fn destroy(&mut self) {

@@ -6,8 +6,16 @@ use crate::layout::RenderObject;
 /// This trait is automatically implemented for structures decorated with `#[ui]` or `#[ui(main)]`. It should be implemented for all views that could be rerendered (or trigger the rerender of an other)
 /// 
 pub trait MutableView {
+
+    // fn take_state()
     /// Return "child" view of this view. In actuality this is the view that really is being rendered.
     fn children(data: Rc<RefCell<Self>>) -> impl RenderObject + 'static;
+
+    fn set_identity(&mut self,identity:usize) {}
+    fn get_identity(&self)->usize {0}
+
+    fn clone_bindings(&self,into:&mut Self) {}
+
     /// Used internally. 
     #[doc(hidden)]
     fn get_attached(&self) -> &Option<Rc<RefCell<crate::native::MutableView>>>;

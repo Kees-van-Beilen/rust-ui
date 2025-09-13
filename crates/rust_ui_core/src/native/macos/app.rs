@@ -57,6 +57,7 @@ define_class!(
                 .downcast::<NSApplication>()
                 .unwrap();
 
+
             // SAFETY: We disable releasing when closed below.
             let window = unsafe {
                 NSWindow::initWithContentRect_styleMask_backing_defer(
@@ -76,7 +77,7 @@ define_class!(
             unsafe { window.setReleasedWhenClosed(false) };
 
             // Set various window properties.
-            window.setTitle(ns_string!("A window"));
+            window.setTitle(ns_string!("rust-ui app"));
 
             window.center();
             // unsafe { window.setContentMinSize(NSSize::new(300.0, 300.0)) };

@@ -1,7 +1,11 @@
 #![feature(more_qualified_paths,default_field_values)]
+use std::cell::Cell;
+
 // the let it poll app
 use rust_ui::prelude::*;
 use rust_ui::view::dyn_render::DynGroup;
+use rust_ui::view::mutable::MutableViewRerender;
+use rust_ui::view::state::{PartialAnyBinding, PartialBinding};
 
 pub enum GlobalState {
     WelcomeScreen,
@@ -46,11 +50,81 @@ struct OverviewView {
                 Spacer()
                 Button("New poll") || {
                     *show_create_poll_sheet.get_mut() = true;
+                }.sheet(bind!(show_create_poll_sheet)) {
+                    CreatePollView{shown:bind!(show_create_poll_sheet)}
                 }
             }
         }
     }
 }
+
+#[ui]
+struct CreatePollView {
+    #[state] poll_name:String,
+    #[state] field_names:Vec<(usize,String)>,
+    #[binding] shown:bool,
+    body:_ = view!{
+        VStack {
+            spacing:Some(10.0),
+            HStack {
+                Text("Create new poll")
+                .title()
+                Spacer()
+            }
+            HStack {
+                spacing:Some(10.0),
+                Text("title")
+                TextField(bind!(poll_name))
+            }
+            PollOptionsView {
+                fields:bind!(field_names)
+            }
+            HStack {
+                Spacer()
+                Button("cancel") || {
+                    *shown.get_mut() = false;
+                }
+                Spacer()
+                Button("create") || {
+                    *shown.get_mut() = false;
+                }
+                Spacer()
+            }
+        }.margin(Margin::all(12.0))
+    }
+}
+
+#[ui]
+struct PollOptionsView {
+    #[binding] fields:Vec<(usize,String)>,
+    #[state] identity_counter:usize = 0,
+    body:_ = view!{
+        HStack {
+            spacing:Some(10.0),
+            ColorView(Color::WHITE).frame(Frame::no_preference().width(4.0))
+            ScrollView {
+                VStack {
+                    Text("fields")
+                    for (identity,field) in fields.iter() {
+                        TextField(field)
+                            .set_identity(identity)
+                    }
+                    Button("+ field") || {
+                        let len = *identity_counter.get()+1;
+                        fields.get_mut().push((*identity_counter.get(),format!("field {}",len)));
+                        // let c = Cell::new(false);
+                        // let mut new_state = identity_counter.to_partial_state().as_state(&c);
+                        // *new_state.get_mut() += 1;
+                        *identity_counter.get_mut() += 1;
+                    }
+                }.align(TextAlignment::Leading).frame(Frame::no_preference())
+            }
+            
+        }
+    }
+}
+
+
 
 
 

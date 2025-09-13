@@ -8,6 +8,8 @@ mod scrollview;
 mod text_field;
 mod sheet;
 
+use std::any::type_name;
+
 use crate::layout::ComputableLayout;
 use objc2_app_kit::NSView;
 use objc2_foundation::{NSPoint};
@@ -24,8 +26,9 @@ impl<T: NSViewRepresentable> ComputableLayout for T {
     }
 
     fn set_position(&mut self, to: crate::layout::Position<f64>) {
+        let name = type_name::<T>();
         let view = self.ns_view();
-        let y = unsafe { view.superview() }.unwrap().frame().size.height
+        let y = unsafe { view.superview() }.expect("this view does not have a parent (impossible! there is something seriously wrong)").frame().size.height
             - to.y
             - view.frame().size.height;
 
@@ -38,7 +41,7 @@ impl<T: NSViewRepresentable> ComputableLayout for T {
     }
 }
 pub (crate) fn nsview_setposition(view:&NSView,to:crate::layout::Position<f64>){
-    let y = unsafe { view.superview() }.unwrap().frame().size.height
+    let y = unsafe { view.superview() }.expect("this view does not have a parent (impossible! there is something seriously wrong)").frame().size.height
         - to.y
         - view.frame().size.height;
 
@@ -50,7 +53,7 @@ pub mod native {
 
     pub use super::image::*;
 
-    use std::{ cell::RefCell, rc::Rc};
+    use std::{ any::type_name, cell::RefCell, rc::Rc};
 
     //views
     use objc2::{DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
@@ -67,7 +70,7 @@ pub mod native {
     use crate::{
         layout::{self, ComputableLayout, Position, RenderObject, Size},
         view::{
-            mutable::MutableViewRerender, persistent_storage::{PersistentStorageRef}, resources::{Resource, ResourceStack}
+            mutable::MutableViewRerender, persistent_storage::{PersistentStorage, PersistentStorageRef}, resources::{Resource, ResourceStack, Resources}
         },
         views::{FontFamily, FontSize, FontWeight, TextAlignment},
     };
@@ -76,24 +79,30 @@ pub mod native {
 
     pub struct MutableView {
         children: Box<dyn ComputableLayout>,
-        parent: Retained<NSView>,
+        parent: Option<Retained<NSView>>,
         layout_size: layout::Size<f64>,
+        layout_position: layout::Position<f64>,
         stack: crate::view::resources::Resources,
         persistent_storage:PersistentStorageRef
     }
-    impl<T: crate::view::mutable::MutableView> MutableViewRerender for Rc<RefCell<T>> {
+    impl<T: crate::view::mutable::MutableView+'static> MutableViewRerender for Rc<RefCell<T>> {
         fn rerender(&self) {
+            println!("{} |> rerender",type_name::<T>());
+
             //This entire rerender logic is a piece of shit
             //the entire idea of these mutable views have to
             //be redesigned.
+
             let mut data = self.borrow_mut();
-            if let Some(k) = &mut data.get_mut_attached() {
+            if let Some(k) = &mut data.get_mut_attached() && k.borrow().parent.is_some() {
+                let layout_size = k.borrow().layout_size;
+                let layout_position = k.borrow().layout_position;
                 let render_data = {
                     let mut b = k.borrow_mut();
                     b.children.destroy();
                     b.persistent_storage.borrow_mut().garbage_collection_unset_all();
                     let render_data = RenderData {
-                        real_parent: b.parent.clone(),
+                        real_parent: b.parent.clone().unwrap(),
                         
                         // persistent_storage:
                         //TODO: fix this clone to a ref
@@ -102,9 +111,21 @@ pub mod native {
                     };
                     render_data
                 };
+                // println!("pre {:?}",Rc::as_ptr(&k));
                 drop(data);
-                let _ = self.render(render_data);
+                let mut v = self.render(render_data);
+                // dbg!(unsafe { v.borrow().children. });
+                // println!("pro {:?}",Rc::as_ptr(&v));
+                // self.borrow_mut().get_mut_attached().as_mut().unwrap().set_size(layout_size);
+                // self.borrow_mut().get_mut_attached().as_mut().unwrap().set_position(layout_position);
+
+                // v.set_size(layout_size);
+                // v.set_position(layout_position);
+
+            }else {
+                drop(data);
             }
+
             //this needs to be done better
             if let Some(a) = self.borrow().get_attached() {
                 a.borrow().persistent_storage.borrow_mut().garbage_collection_cycle();
@@ -112,31 +133,100 @@ pub mod native {
         }
         
     }
-    impl<T: crate::view::mutable::MutableView> RenderObject for Rc<RefCell<T>> {
+    impl<T: crate::view::mutable::MutableView+'static> RenderObject for Rc<RefCell<T>> {
         type Output = Rc<RefCell<crate::native::MutableView>>;
 
         fn render(&self, data: crate::native::RenderData) -> Self::Output {
-            let r = T::children(self.clone()).render(data.clone());
+
+            type Store<T> = (Resources,PersistentStorageRef,Rc<RefCell<T>>);
+            let identity = self.borrow().get_identity();
+            let mut borrow = data.persistent_storage.borrow_mut();
+            let mut resume_storage = true;
+            // let mut did_swap = false;
+            // let mut did_try_swap = false;
+            let(res,storage,self_container)= borrow.get_or_init_with::<Store<T>>(identity,||{
+                resume_storage = false;
+                (data.stack.as_ref().clone(),PersistentStorageRef::default(),self.clone())
+            });
+
+
+
+            println!("{} |> render (from buffer: {:?})",type_name::<T>(),resume_storage);
+
+
+            //we need to copy the state from the last 
+            if !Rc::ptr_eq(self, self_container){
+                self_container.borrow().clone_bindings(&mut self.borrow_mut());
+                
+            }
+                //     // self.borrow()
+            //     // this is the situation:
+            //     //  A parent view is rerendered and whilst rerendering rendered this view.
+            //     //  however this new render loses all the bindings etc of the old view.
+
+            //     // 
+            //     // println!("track borrow {:?} {identity} {:?}",Rc::as_ptr(self_container),self_container.try_borrow_mut().is_ok());
+            //     println!("{} |> try swap pointers",type_name::<T>());
+            
+            //     if self_container.try_borrow_mut().is_ok() {
+            //         self.swap(self_container);
+            //         println!("{} |> swapped pointers",type_name::<T>());
+            //     }
+
+            //     //  this also means that self_container is already borrowed mut
+            //     // std::mem::swap(x, y);
+            //     // *self.borrow_mut().get_mut_attached() = self_container.borrow().get_attached().clone();
+            //     // self.borrow().get_attached().as_ref().unwrap().swap(self_container.borrow().get_attached().as_ref().unwrap());
+            //     // println!("{:?} vs {:?}",Rc::as_ptr(self),Rc::as_ptr(self_container));
+            //     // dbg!((self.try_borrow_mut().is_ok(),self_container.try_borrow_mut().is_ok()));
+            //     // self.swap(self_container);
+            // }
+
+
+
+
+            let new_data = RenderData {
+                real_parent: data.real_parent,
+                stack: ResourceStack::Owned(res.clone()),
+                persistent_storage: storage.clone(),
+            };
+            drop(borrow);
+
+            let r = T::children(self.clone()).render(new_data.clone());
             let view = Rc::new(RefCell::new(MutableView {
                 children: Box::new(r),
                 layout_size: layout::Size {
                     width: 0.0,
                     height: 0.0,
                 },
-                parent: data.real_parent,
-                stack: data.stack.as_ref().clone(),
-                persistent_storage:data.persistent_storage.clone()
+                
+                parent: Some(new_data.real_parent),
+                stack: match new_data.stack {
+                    ResourceStack::Owned(resources) => resources,
+                    ResourceStack::Borrow(resources) => resources.clone(),
+                },
+                persistent_storage:data.persistent_storage,
+                layout_position: layout::Position::default(),
             }));
+
+
             let mut m = self.borrow_mut();
             let mut attached = m.get_mut_attached();
             if let Some(k) = &mut attached {
                 k.swap(&view);
                 k.set_size(view.borrow().layout_size);
-                k.set_position(Position { x: 0.0, y: 0.0 });
+                k.set_position(view.borrow().layout_position);
             } else {
                 *attached = Some(view.clone());
             }
-            view
+            println!("| end {:?}",Rc::as_ptr(self));
+
+            m.get_attached().clone().unwrap()
+        }
+
+        fn set_identity(self, identity: usize) -> Self {
+            self.borrow_mut().set_identity(identity);
+            self
         }
     }
     
@@ -150,11 +240,13 @@ pub mod native {
         }
 
         fn set_position(&mut self, to: layout::Position<f64>) {
+            self.borrow_mut().layout_position = to;
             self.borrow_mut().children.set_position(to);
         }
 
         fn destroy(&mut self) {
             self.borrow_mut().children.destroy();
+            self.borrow_mut().parent = None;
         }
         
         fn v_tables_mut(&mut self) -> &mut [&mut dyn ComputableLayout] {
@@ -302,7 +394,6 @@ pub mod native {
 
             let y = (self.size.height - size.height) * 0.5 + self.position.y;
             let x = (to.width - size.width) * 0.5 + self.position.x;
-            // println!("real y {y}");
             let y = unsafe { self.nsview.superview() }
                 .unwrap()
                 .frame()
@@ -310,7 +401,6 @@ pub mod native {
                 .height
                 - y
                 - size.height;
-            // println!("real y {y}");
             unsafe { self.nsview.setFrameOrigin(NSPoint { x, y }) };
         }
     }
@@ -403,6 +493,7 @@ pub mod native {
     pub struct RenderData<'a> {
         pub real_parent: Retained<NSView>,
         pub stack: crate::view::resources::ResourceStack<'a>,
+        /// a reference to the parents persistent_storage
         pub persistent_storage:PersistentStorageRef
     }
 

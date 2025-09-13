@@ -16,13 +16,15 @@ pub struct Axis {
 pub struct ScrollView<Child:RenderObject> {
     pub child:Child,
     pub axis: Axis,
+    pub (crate)identity:usize
 }
 
 impl<Child:RenderObject> ScrollView<Child> {
     pub fn new(init:ScrollViewPartialInit<Child>)->Self {
         Self {
             child:init.children.unwrap().0,
-            axis:Axis { x: init.x.unwrap_or(ScrollBehavior::NoScroll), y: init.y.unwrap_or(ScrollBehavior::NoScroll)}
+            axis:Axis { x: init.x.unwrap_or(ScrollBehavior::NoScroll), y: init.y.unwrap_or(ScrollBehavior::NoScroll)},
+            identity:0
         }
     }
 }

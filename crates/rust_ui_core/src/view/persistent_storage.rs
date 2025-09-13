@@ -1,4 +1,4 @@
-use std::{any::Any, cell::RefCell, collections::BTreeMap, rc::Rc};
+use std::{any::Any, cell::RefCell, collections::BTreeMap, fmt::Debug, rc::Rc};
 
 ///
 /// PersistentStorage is used in mutable views during rendering. It is passed to the children, which can use their identity
@@ -10,7 +10,7 @@ use std::{any::Any, cell::RefCell, collections::BTreeMap, rc::Rc};
 /// - any custom view (with mutable state)
 /// - [`crate::views::control_flows::list::ListView`] which in rust_ui are `for loops` however there children do not automatically get an identity (these have to be assigned manually, that way the render system can properly identify each array item no matter the order )
 ///
-#[derive(Default)]
+#[derive(Default,Debug)]
 pub struct PersistentStorage {
     map: BTreeMap<usize, Box<dyn Any>>,
     /// views that want to register to the garbage collection
@@ -24,6 +24,11 @@ pub struct GarbageCollectable {
     /// afterwards if it is still false the `remove_fn` will be called.
     flagged_to_keep: bool,
 }
+impl Debug for GarbageCollectable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GarbageCollectable").field("flagged_to_keep", &self.flagged_to_keep).finish()
+    }
+}
 
 #[derive(Default, Clone)]
 pub struct PersistentStorageRef {
@@ -33,6 +38,28 @@ pub struct PersistentStorageRef {
 impl PersistentStorage {
     pub fn get<T: Any>(&self, identity: usize) -> Option<&T> {
         self.map.get(&identity).and_then(|e| e.downcast_ref())
+    }
+    pub fn get_or_init_with<'a,T:Any>(&'a mut self,identity: usize,init:impl FnOnce()->T) -> &'a T {
+        match  self.get::<T>(identity) {
+            None => {
+                let item = init();
+                self.insert(identity, item);
+            },
+            _=>{}
+        }
+        self.get(identity).unwrap()
+    }
+
+    pub fn get_or_register_gc<'a,T:Any,A:FnOnce()+'static>(&'a mut self,identity: usize,init:impl FnOnce()->(T,A)) -> &'a T {
+        match  self.get::<T>(identity) {
+            None => {
+                let (item,gc) = init();
+                self.insert(identity, item);
+                self.register_for_garbage_collection(identity, gc)
+            },
+            _=>{}
+        }
+        self.get(identity).unwrap()
     }
     pub fn insert<T: Any>(&mut self, identity: usize, item: T) {
         self.map.insert(identity, Box::new(item));
@@ -84,5 +111,8 @@ impl PersistentStorageRef {
     }
     pub fn borrow_mut(&self) -> std::cell::RefMut<'_, PersistentStorage> {
         self.cell.borrow_mut()
+    }
+    pub (crate) fn inner(&self)->&Rc<RefCell<PersistentStorage>>{
+        &self.cell
     }
 }

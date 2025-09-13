@@ -12,3 +12,4 @@ pub use frame::{Frame, FrameModifier};
 pub use margin::{Margin, MarginModifier};
 pub use on_tap::OnTapModifier;
 pub use boxed::BoxedModifier;
+pub use sheet::SheetModifier;
