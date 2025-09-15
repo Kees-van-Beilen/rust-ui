@@ -134,6 +134,16 @@ pub trait Identifiable {
     fn value(&self)->&Self::Value;
     fn value_mut(&mut self)->&mut Self::Value;
 }
+
+pub trait NextIdentity {
+    fn next_identity(&self)->usize;
+}
+impl<T:Identifiable> NextIdentity for Vec<T> {
+    fn next_identity(&self)->usize {
+        self.iter().map(|e|e.identity()).max().unwrap_or(0) + 1
+    }
+}
+
 impl<T> Identifiable for (usize,T) {
     type Value=T;
 

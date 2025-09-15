@@ -106,7 +106,7 @@ impl<Sheet: RenderObject+'static, View: RenderObject> RenderObject
                 }else {
                     
                     println!("close window");
-                    let main_window = unsafe { NSApp(mtm).windows().firstObject() }.unwrap();
+                    let main_window = NSApp(mtm).windows().firstObject().unwrap();
                     unsafe { main_window.endSheet(&del.ivars().window) };
                     let _ = window;
                     let _ = render_data;
@@ -134,7 +134,7 @@ impl<Sheet: RenderObject+'static, View: RenderObject> RenderObject
                         stack: crate::view::resources::ResourceStack::Owned(Resources::default()),
                         persistent_storage: PersistentStorageRef::default(),
                     };
-                    let main_window = unsafe { NSApp(mtm).windows().firstObject() }.unwrap();
+                    let main_window =  NSApp(mtm).windows().firstObject() .unwrap();
                     let mut rendered = sheet.render(new_data.clone());
                     rendered.set_size(NSSize::new(300.0, 300.0).into());
                     rendered.set_position(Position::default());

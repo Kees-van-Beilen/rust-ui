@@ -3,7 +3,7 @@ use objc2_app_kit::NSScrollerStyle;
 
 use crate::{
     native::macos::nsview_setposition,
-    view::persistent_storage::{PersistentStorage, PersistentStorageRef},
+    view::persistent_storage::{ PersistentStorageRef},
     views::{Axis, ScrollBehavior},
 };
 
@@ -13,7 +13,6 @@ pub struct NativeScrollView<Child: crate::layout::ComputableLayout> {
     content_view: Retained<objc2_app_kit::NSView>,
     axis: Axis,
     child: Child,
-    storage: PersistentStorageRef,
 }
 
 
@@ -85,7 +84,6 @@ impl<T: crate::layout::RenderObject> crate::layout::RenderObject for crate::view
                 ns_view: ns_view,
                 axis: self.axis,
                 content_view,
-                storage,
             }
         // }
     }

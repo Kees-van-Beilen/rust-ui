@@ -28,8 +28,15 @@ impl UIClassification {
         s
     }
 }
+#[derive(Debug,Default,PartialEq,Eq,Clone,Copy)]
+pub enum Visibility {
+    #[default]
+    Private,
+    Public
+}
 #[derive(Debug)]
 pub struct StructInfo {
+    pub visibility:Visibility,
     pub name: Ident,
     pub fields: Vec<StructField>,
 }
@@ -99,9 +106,23 @@ impl Decorator {
 pub fn get_struct_info(item: TokenStream) -> StructInfo {
     //
     let mut iter = item.into_iter();
-    let Some(TokenTree::Ident(span)) = iter.next() else {
-        panic!("expected struct keyword")
+    let mut visibility = Visibility::Private;
+
+    let span = match iter.next() {
+        Some(TokenTree::Ident(span)) if span.to_string() == "pub" => {
+            visibility = Visibility::Public;
+            let Some(TokenTree::Ident(span)) = iter.next() else {
+                panic!("expected struct keyword")
+            };
+            span
+        }
+        Some(TokenTree::Ident(span)) => span,
+        _ => panic!("expected struct keyword")
     };
+
+    // let Some(TokenTree::Ident(span)) = iter.next() else {
+    //     panic!("expected struct keyword")
+    // };
     assert!(span.to_string() == "struct");
     let Some(TokenTree::Ident(name)) = iter.next() else {
         panic!("expected name after struct")
@@ -199,7 +220,7 @@ pub fn get_struct_info(item: TokenStream) -> StructInfo {
         fields.push(field);
     }
 
-    StructInfo { name, fields }
+    StructInfo { visibility,name, fields }
 }
 
 #[derive(Default)]
@@ -736,8 +757,7 @@ fn translate_rust_ui_init_syntax(writer:&mut TokenStream,input:TokenStream,data_
     }
 }
 
-pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &StructInfo) {
-    macro_rules! ident {
+macro_rules! ident {
         ($x:tt) => {
             TokenTree::Ident(Ident::new($x, Span::call_site()))
         };
@@ -747,6 +767,11 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
             TokenTree::Punct(Punct::new($x, Spacing::Alone))
         };
     }
+
+pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &StructInfo) {
+    
+
+    
 
     let mut body = TokenStream::new();
 
@@ -775,6 +800,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                 let mut context = UIContext::default();
                 context.top_level_view_unpack = children_fn_body_unwrapped.clone();
                 context.top_level_view_unpack.extend(TokenStream::from_str(BIND_MACRO).unwrap());
+                context.top_level_view_unpack.extend(gen_effect_macro(&data_ref_unpack));
                 translate_rust_ui_init_syntax(&mut children_fn_body_final_part, TokenStream::from_iter(iter),&data_ref_unpack,&mut context);
             }
             StructField::Field {
@@ -786,6 +812,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                     ident!("let"),
                     TokenTree::Ident(name.clone()),
                     punct!('='),
+                    punct!('&'),
                     ident!("data_ref"),
                     punct!('.'),
                     TokenTree::Ident(name.clone()),
@@ -795,6 +822,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                     ident!("let"),
                     TokenTree::Ident(name.clone()),
                     punct!('='),
+                    punct!('&'),
                     ident!("data_ref"),
                     punct!('.'),
                     TokenTree::Ident(name.clone()),
@@ -803,7 +831,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                 body.extend([TokenTree::Ident(name.clone()), punct!(':')]);
                 body.extend(ty.clone());
                 body.extend([punct!(',')]);
-                partial_init_body.extend([TokenTree::Ident(name.clone()), punct!(':')]);
+                partial_init_body.extend([ident!("pub"), TokenTree::Ident(name.clone()), punct!(':')]);
 
                 if initializer.is_some() {
                     partial_init_body
@@ -851,7 +879,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                 body.extend(ty.clone());
                 body.extend([punct!('>'),punct!(',')]);
 
-                partial_init_body.extend([TokenTree::Ident(name.clone()), punct!(':')]);
+                partial_init_body.extend([ident!("pub"),TokenTree::Ident(name.clone()), punct!(':')]);
                 partial_init_body.extend(TokenStream::from_str("::rust_ui::view::state::PartialBinding<").unwrap());
                 partial_init_body.extend(ty.clone());
                 partial_init_body.extend([punct!('>'),punct!(',')]);
@@ -914,7 +942,7 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
                 body.extend(TokenStream::from_str("::rust_ui::view::state::PartialState<").unwrap());
                 body.extend(ty.clone());
                 body.extend([punct!('>'),punct!(',')]);
-                partial_init_body.extend([TokenTree::Ident(name.clone()), punct!(':')]);
+                partial_init_body.extend([ident!("pub"),TokenTree::Ident(name.clone()), punct!(':')]);
                 if initializer.is_some() {
                     partial_init_body
                         .extend(TokenStream::from_str("::std::option::Option<").unwrap());
@@ -996,6 +1024,12 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
         identity: 0usize",
     ));
 
+    if info.visibility == Visibility::Public {
+        writer.extend([
+            TokenTree::Ident(Ident::new("pub", Span::call_site())),
+        ]);
+    }
+
     writer.extend([
         TokenTree::Ident(Ident::new("struct", Span::call_site())),
         TokenTree::Ident(info.name.clone()),
@@ -1003,9 +1037,18 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
     ]);
     let mut partial_name = info.name.to_string();
     partial_name.push_str("PartialInit");
+
     writer.extend([
         punct!('#'),
         TokenTree::Group(Group::new(Delimiter::Bracket, TokenStream::from_str("derive(Default)").unwrap())),
+    ]);
+
+     if info.visibility == Visibility::Public {
+        writer.extend([
+            TokenTree::Ident(Ident::new("pub", Span::call_site())),
+        ]);
+    }
+    writer.extend([
         TokenTree::Ident(Ident::new("struct", Span::call_site())),
         TokenTree::Ident(Ident::new(partial_name.as_str(), info.name.span())),
         TokenTree::Group(Group::new(Delimiter::Brace, partial_init_body)),
@@ -1183,6 +1226,43 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
     ]);
     //Inject the bind! macro. This method is type safe :) yeah
     children_fn_body_unwrapped.extend(TokenStream::from_str(BIND_MACRO).unwrap());
+    //create and inject the effect! macro
+    /*
+    
+    macro_rules! effect {
+        (some box $expr:expr) => {
+            Some(Box::new(effect!($expr)))
+        };
+        (|$($arg:ident : $t: ty),+| $expr:block) => {
+            {
+                let data = data.clone();
+                move||{
+                    let data_ref = data.borrow();
+                    let signal =  ::std::cell::Cell::new(false);
+                    let queue =  ::rust_ui::view::state::BindingQueue::default();
+                    let res = {
+                        let on_create_poll = data_ref.on_create_poll;
+                        let mut poll_name = data_ref.poll_name.as_state(&signal);
+                        let mut field_names = data_ref.field_names.as_state(&signal);
+                        let mut shown = data_ref.shown.as_binding(&queue);
+                        (move||{
+                            *shown.get_mut() = false;
+                            on_create_poll();
+                        })()
+                    };
+                    queue.execute();
+                    ::std::mem::drop(data_ref);
+                    if signal.take(){
+                        ::rust_ui::view::mutable::MutableViewRerender::rerender(&data);
+                    }res
+                }
+            }
+        };
+    }
+     */
+    let effect_macro = gen_effect_macro(&data_ref_unpack);
+
+    children_fn_body_unwrapped.extend(effect_macro);
 
     children_fn_body_unwrapped.extend(children_fn_body_final_part);
 
@@ -1231,6 +1311,44 @@ pub fn create_normalized_struct_mutable_view(writer: &mut TokenStream, info: &St
     ]);
 }
 
+
+fn gen_effect_macro(data_ref_unpack:&TokenStream)->TokenStream{
+    TokenStream::from_iter([
+        ident!("macro_rules"),
+        punct!('!'),
+        ident!("effect"),
+        TokenTree::Group(Group::new(Delimiter::Brace, {
+            let mut s = TokenStream::from_str(" (some box |$($arg:tt : $t: tt),+| $expr:tt) => {
+                Some(Box::new(effect!(|$($arg : $ty),+| $expr)))
+            };  (|$($arg:ident : $t: ty),+| $expr:block) =>").unwrap();
+            s.extend([TokenTree::Group(Group::new(Delimiter::Brace, TokenStream::from_iter([TokenTree::Group(Group::new(Delimiter::Brace, {
+                let mut s = TokenStream::new();
+                s.extend(TokenStream::from_str("let data = data.clone(); move |$($arg : $t),+|"));
+                s.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
+                    let mut s = TokenStream::from_str("let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
+                    let mut sub = TokenStream::new();
+                    sub.extend(data_ref_unpack.clone());
+
+                        sub.extend([
+                            TokenTree::Group(Group::new(Delimiter::Parenthesis, {
+                                let mut s = TokenStream::from_str("move |$($arg : $t),+| $expr").unwrap();
+                                s
+                            })),
+                            // TokenTree::Group(Group::new(Delimiter::Parenthesis, func_args_inner)),
+                        ]);
+                        sub.extend(TokenStream::from_str("($($arg),+)"));
+                        // sub.extend(TokenStream::from_str("; if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
+                        s.extend([TokenTree::Group(Group::new(Delimiter::Brace, sub))]);
+                        s.extend(TokenStream::from_str(";queue.execute();::std::mem::drop(data_ref); if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
+
+                        s
+                }))]);
+                s
+            }))])))]);
+            s
+        }))
+    ])
+}
 
 
 /*

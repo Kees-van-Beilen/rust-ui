@@ -2,10 +2,6 @@
 use rust_ui::prelude::*;
 
 
-const COLORS:&[Color] = &[
-    Color::WHITE,
-    Color::BLACK
-];
 
 #[ui(main)]
 struct RootView {
@@ -16,6 +12,8 @@ struct RootView {
         
        VStack {
             spacing: Some(10.0),
+
+            ColorView(Color::BLACK).frame(Frame::no_preference().height(100.0))
             HStack {
                 TextField(bind!(text))
                 Button("Add to list") || {
@@ -36,6 +34,7 @@ struct RootView {
                             .background {
                                 ColorView(Color::BLACK)
                             }
+                        
                     }
                 }
             }

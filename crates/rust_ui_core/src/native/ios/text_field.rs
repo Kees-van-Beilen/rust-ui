@@ -1,6 +1,6 @@
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained};
-use objc2_app_kit::NSTextField;
 use objc2_foundation::{NSNotification, NSPoint, NSString};
+use objc2_ui_kit::{UIControlEvents, UITextField, UITextFieldDelegate};
 
 use crate::{
     layout::{ComputableLayout, RenderObject},
@@ -16,7 +16,7 @@ define_class!(
     // SAFETY:
     // - The superclass NSObject does not have any subclassing requirements.
     // - `Delegate` does not implement `Drop`.
-    #[unsafe(super = NSTextField)]
+    #[unsafe(super = UITextField)]
     #[thread_kind = MainThreadOnly]
     #[name = "RustTextField"]
     #[ivars = RustTextFieldIVars]
@@ -31,11 +31,8 @@ define_class!(
         // SAFETY: The signature is correct.
         #[unsafe(method(textDidChange:))]
         fn text_change(&self, _notification: &NSNotification) {
-            let text = unsafe { self.stringValue() }.to_string();
+            let text = unsafe { self.text().map(|e|e.to_string()) }.unwrap_or_default();
             self.ivars().binding.update_value(text);
-
-            // self.ivars().binding
-            // self.ivars().binding
         }
 
     }
@@ -48,7 +45,15 @@ impl RustTextField {
         binding: PartialBindingBox<String>,
     ) -> Retained<RustTextField> {
         let this = Self::alloc(mtm).set_ivars(RustTextFieldIVars { binding });
-        msg_send![super(this), init]
+        let s: Retained<RustTextField> = msg_send![super(this), init];
+        unsafe {
+            s.addTarget_action_forControlEvents(
+                Some(&s),
+                objc2::sel!(textDidChange:),
+                UIControlEvents::EditingChanged,
+            )
+        };
+        s
         // t.ivars().binding.swap(&RefCell::new(Some(binding)));
     }
 }
@@ -84,7 +89,7 @@ impl RenderObject for TextField {
                 let ns_view = view.clone();
                 let _ = view;
                 let str = NSString::from_str(self.text_binding.get().as_str());
-                ns_view.setStringValue(&str);
+                ns_view.setText(Some(&str));
                 // ns_view.stringValue().
                 NativeTextField { ns_view }
             } else {
@@ -92,7 +97,7 @@ impl RenderObject for TextField {
                 // let bo = clone_dyn::clone_into_box(&self.text_binding);
                 let ns_view = RustTextField::new(mtm, self.text_binding.clone_box());
                 let str = NSString::from_str(self.text_binding.get().as_str());
-                ns_view.setStringValue(&str);
+                ns_view.setText(Some(&str));
                 {
                     let ns_view = ns_view.clone();
                     data.persistent_storage
@@ -114,17 +119,16 @@ impl RenderObject for TextField {
 impl ComputableLayout for NativeTextField {
     fn set_size(&mut self, to: crate::layout::Size<f64>) {
         let view = &self.ns_view;
-        unsafe { view.setFrameSize(to.into()) };
+        let mut frame = view.frame();
+        frame.size = to.into();
+        view.setFrame(frame);
     }
 
     fn set_position(&mut self, to: crate::layout::Position<f64>) {
         let view = &self.ns_view;
-        let Some(super_view) = (unsafe { view.superview() }) else {
-            return;
-        };
-        let y = super_view.frame().size.height - to.y - view.frame().size.height;
-
-        unsafe { view.setFrameOrigin(NSPoint { x: to.x, y: y }) };
+        let mut frame = view.frame();
+        frame.origin = to.into();
+        view.setFrame(frame);
     }
     fn preferred_size(
         &self,

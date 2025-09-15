@@ -55,7 +55,7 @@ impl<T: RenderObject> RenderObject for FrameView<T> {
     }
 }
 impl<T: ComputableLayout> ComputableLayout for RenderedFrameView<T> {
-    fn preferred_size(&self, in_frame: &crate::layout::Size<f64>) -> Size<Option<f64>> {
+    fn preferred_size(&self, _in_frame: &crate::layout::Size<f64>) -> Size<Option<f64>> {
         self.1.preferred
     }
     fn set_size(&mut self, to: crate::layout::Size<f64>) {

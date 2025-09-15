@@ -90,21 +90,21 @@ struct CalcButtonView {
                 match borrow {
                     // in the case we pressed '.' we want to add a decimal separator iff the number doesn't already have one
                     CalculatorState::SecondNumber { first_number:_, op:_, second_number:num }
-                    | CalculatorState::FirstNumber(num) if face_text == '.' && !num.contains('.') => num.push('.'),
+                    | CalculatorState::FirstNumber(num) if *face_text == '.' && !num.contains('.') => num.push('.'),
                     // if we pressed a number and the current number displayed is '0' we want to replace it and not append it.
                     // otherwise we would get something like "02" instead of "2"
                     CalculatorState::SecondNumber { first_number:_, op:_, second_number:num }
                     | CalculatorState::FirstNumber(num) if num == "0" => {
                         num.clear();
-                        num.push(face_text);
+                        num.push(*face_text);
                     },
                     // if we pressed a number, we want to add it
                     CalculatorState::SecondNumber { first_number:_, op:_, second_number:num }
-                    | CalculatorState::FirstNumber(num) if face_text.is_ascii_digit() => num.push(face_text),
+                    | CalculatorState::FirstNumber(num) if face_text.is_ascii_digit() => num.push(*face_text),
                     // if we press a number whilst a result is displayed, we first remove the result
                     CalculatorState::Result(_) if face_text.is_ascii_digit() => *borrow = CalculatorState::FirstNumber(face_text.to_string()),
                     // if we press the '=' button we calculate the result
-                    CalculatorState::SecondNumber { first_number, op, second_number } if face_text == '=' => {
+                    CalculatorState::SecondNumber { first_number, op, second_number } if *face_text == '=' => {
                         let a:f64 = first_number.parse().unwrap();
                         let b:f64 = second_number.parse().unwrap();
                         let c = match op {
@@ -117,7 +117,7 @@ struct CalcButtonView {
                     }
                     // if al else fails we check if face_text is an operator and advance the app state accordingly
                     CalculatorState::Result(num)
-                    |CalculatorState::FirstNumber(num) => if let Some(op) = Op::from_char(face_text) {
+                    |CalculatorState::FirstNumber(num) => if let Some(op) = Op::from_char(*face_text) {
                         *borrow = CalculatorState::SecondNumber { first_number: num.clone(), op, second_number: "0".to_string() }
                     }
                     // if this button doesn't make sense to do anything at the current application state, then don't do anything

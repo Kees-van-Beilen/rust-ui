@@ -122,7 +122,7 @@ pub unsafe fn create_window(mtm: MainThreadMarker) -> Retained<UIWindow> {
     // window.resize
     let mtm = MainThreadMarker::new().unwrap();
     let controller:Retained<RustViewController> = msg_send!(RustViewController::alloc(mtm), init);
-    unsafe { window.setRootViewController(Some(&controller)) };
+    window.setRootViewController(Some(&controller));
 
     return window;
 }
@@ -135,8 +135,9 @@ impl Delegate {
         let window = self.ivars().window.get().unwrap();
         let view = window.rootViewController().unwrap().view().unwrap();
         let stack = crate::view::resources::ResourceStack::Owned(Default::default());
+        let persistent_storage = Default::default();
         let root: Box<dyn ComputableLayout> =
-            Box::new(object.render(super::native::RenderData { real_parent: view, stack }));
+            Box::new(object.render(super::native::RenderData { real_parent: view, stack,persistent_storage }));
         let _ = ROOT_VIEW.with(|v| v.replace(Some(root)));
 
     }

@@ -5,7 +5,12 @@ use std::cell::Cell;
 use rust_ui::prelude::*;
 use rust_ui::view::dyn_render::DynGroup;
 use rust_ui::view::mutable::MutableViewRerender;
-use rust_ui::view::state::{PartialAnyBinding, PartialBinding};
+use rust_ui::view::state::{Identifiable, PartialAnyBinding, PartialBinding};
+
+
+mod create_poll_view;
+use create_poll_view::CreatePollView;
+
 
 pub enum GlobalState {
     WelcomeScreen,
@@ -25,16 +30,26 @@ struct RootView {
     
 }
 
-struct Poll {
+#[derive(Clone,Default)]
+pub struct Poll {
     identifier:usize,
     name:String,
-    state:PollState
+    fields:Vec<String>
 }
+impl Identifiable for Poll {
+    type Value = Poll;
 
-enum PollState {
-    Draft,
-    Running,
-    Closed
+    fn identity(&self)->usize {
+        self.identifier
+    }
+
+    fn value(&self)->&Self::Value {
+        self
+    }
+
+    fn value_mut(&mut self)->&mut Self::Value {
+        self
+    }
 }
 
 
@@ -51,78 +66,175 @@ struct OverviewView {
                 Button("New poll") || {
                     *show_create_poll_sheet.get_mut() = true;
                 }.sheet(bind!(show_create_poll_sheet)) {
-                    CreatePollView{shown:bind!(show_create_poll_sheet)}
+                    CreatePollView{
+                        polls:bind!(polls),
+                        shown:bind!(show_create_poll_sheet)
+                    }
+                }
+            }
+            ScrollView {
+                y:Some(ScrollBehavior::Scroll),
+                VStack {
+                    spacing:Some(5.0),
+                    for (identity,poll) in bind!(polls).iter() {
+                        OverviewPollView{
+                            poll:Some(poll.get().clone())
+                        }.set_identity(identity)
+                    }
                 }
             }
         }
     }
 }
-
 #[ui]
-struct CreatePollView {
-    #[state] poll_name:String,
-    #[state] field_names:Vec<(usize,String)>,
-    #[binding] shown:bool,
-    body:_ = view!{
-        VStack {
-            spacing:Some(10.0),
-            HStack {
-                Text("Create new poll")
-                .title()
-                Spacer()
-            }
-            HStack {
-                spacing:Some(10.0),
-                Text("title")
-                TextField(bind!(poll_name))
-            }
-            PollOptionsView {
-                fields:bind!(field_names)
-            }
-            HStack {
-                Spacer()
-                Button("cancel") || {
-                    *shown.get_mut() = false;
-                }
-                Spacer()
-                Button("create") || {
-                    *shown.get_mut() = false;
-                }
-                Spacer()
-            }
-        }.margin(Margin::all(12.0))
-    }
-}
-
-#[ui]
-struct PollOptionsView {
-    #[binding] fields:Vec<(usize,String)>,
-    #[state] identity_counter:usize = 0,
+struct OverviewPollView {
+    poll:Poll = Poll::default(),
     body:_ = view!{
         HStack {
-            spacing:Some(10.0),
-            ColorView(Color::WHITE).frame(Frame::no_preference().width(4.0))
-            ScrollView {
-                VStack {
-                    Text("fields")
-                    for (identity,field) in fields.iter() {
-                        TextField(field)
-                            .set_identity(identity)
-                    }
-                    Button("+ field") || {
-                        let len = *identity_counter.get()+1;
-                        fields.get_mut().push((*identity_counter.get(),format!("field {}",len)));
-                        // let c = Cell::new(false);
-                        // let mut new_state = identity_counter.to_partial_state().as_state(&c);
-                        // *new_state.get_mut() += 1;
-                        *identity_counter.get_mut() += 1;
-                    }
-                }.align(TextAlignment::Leading).frame(Frame::no_preference())
-            }
-            
-        }
+            Text(&poll.name)
+                .title()
+            Spacer()
+            Text(">")
+                .with_font_size(21.0)
+        }.margin(Margin::all(5.0)).background(ColorView(Color::BLACK)).margin(Margin::all(5.0))
     }
 }
+
+
+
+// struct OverviewView {
+//     show_create_poll_sheet: ::rust_ui::view::state::PartialState<bool> ,polls: ::rust_ui::view::state::PartialState<Vec<Poll>> ,view: ::std::option::Option<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>,identity:usize
+// }
+// #[derive(Default)]
+// struct OverviewViewPartialInit {
+//     pub show_create_poll_sheet: ::std::option::Option<bool> ,pub polls:Vec<Poll>,
+// }
+// impl OverviewView {
+//     pub fn new(initializer:impl OverviewViewInitializer) ->  ::std::rc::Rc< ::std::cell::RefCell<Self> >{
+//         ::std::rc::Rc::new(::std::cell::RefCell::new(OverviewViewInitializer::init(initializer)))
+//     }
+
+//     }
+// trait OverviewViewInitializer {
+//     fn init(self) -> OverviewView;
+
+//     }impl OverviewViewInitializer for OverviewViewPartialInit {
+//     fn init(self) -> OverviewView {
+//         OverviewView {
+//             show_create_poll_sheet: ::std::option::Option::<bool>::unwrap_or_else(self.show_create_poll_sheet, | |false).into(),polls:self.polls.into(),view: ::std::option::Option::<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>::None,identity:0usize
+//         }
+//     }
+
+//     }
+// impl ::rust_ui::PartialInitialisable for OverviewView {
+//     type PartialInit = OverviewViewPartialInit;
+// }
+// impl ::rust_ui::view::mutable::MutableView for OverviewView {
+//     #[allow(unused_macros)]
+//     fn children(data: ::std::rc::Rc<::std::cell::RefCell<Self>>) -> impl ::rust_ui::layout::RenderObject+'static{
+//         use::rust_ui::layout::RenderObject;
+//         let data_ref = data.borrow();
+//         let show_create_poll_sheet =  &data_ref.show_create_poll_sheet;
+//         let polls =  &data_ref.polls;
+//         macro_rules! bind {
+//             ($state:expr) => {
+//                 ::rust_ui::view::state::AsPartiBinding::as_partial_binding($state,data.clone())
+//             };
+//         }
+//         ;
+//         macro_rules! effect {
+//             (some box$expr:expr) => {
+//                 Some(Box::new(effect!($expr)))
+//             };
+//             (|$($arg:ident: $t:ty),+| $expr:block) => {
+//                 {
+//                     let data = data.clone();
+//                     move|$($arg: $t),+|{
+//                         let data_ref = data.borrow();
+//                         let signal =  ::std::cell::Cell::new(false);
+//                         let queue =  ::rust_ui::view::state::BindingQueue::default();
+//                         let res = {
+//                             let mut show_create_poll_sheet = data_ref.show_create_poll_sheet.as_state(&signal);
+//                             let mut polls = data_ref.polls.as_state(&signal);
+//                             (move |$($arg: $t),+| $expr)($($arg),+)
+//                         };
+//                         queue.execute();
+//                         ::std::mem::drop(data_ref);
+//                         if signal.take(){
+//                             ::rust_ui::view::mutable::MutableViewRerender::rerender(&data);
+//                         }res
+//                     }
+//                 }
+//             }
+//         }
+//         {
+//             VStack::new(<VStack<_>as ::rust_ui::PartialInitialisable>::PartialInit {
+//                 children: ::std::option::Option::Some((HStack::new(<HStack<_>as ::rust_ui::PartialInitialisable>::PartialInit {
+//                     children: ::std::option::Option::Some((Spacer::new(#[allow(unused_parens)]
+//                     ()).set_identity(0),Button::new(#[allow(unused_parens)]
+//                     ("New poll")).set_identity(0).with_capture_callback({
+//                         let data = data.clone();
+//                         move||{
+//                             let data_ref = data.borrow();
+//                             let signal =  ::std::cell::Cell::new(false);
+//                             let queue =  ::rust_ui::view::state::BindingQueue::default();
+//                             let res = {
+//                                 let mut show_create_poll_sheet = data_ref.show_create_poll_sheet.as_state(&signal);
+//                                 let mut polls = data_ref.polls.as_state(&signal);
+//                                 (move||{
+//                                     *show_create_poll_sheet.get_mut() = true;
+//                                 })()
+//                             };
+//                             queue.execute();
+//                             ::std::mem::drop(data_ref);
+//                             if signal.take(){
+//                                 ::rust_ui::view::mutable::MutableViewRerender::rerender(&data);
+//                             }res
+//                         }
+//                     },0).sheet(::rust_ui::view::state::AsPartiBinding::as_partial_binding(show_create_poll_sheet,data.clone())).with_capture_callback({
+//                         let data = data.clone();
+//                         move||{
+//                             use::rust_ui::layout::RenderObject;
+//                             let data_ref = data.borrow();
+//                             let show_create_poll_sheet =  &data_ref.show_create_poll_sheet;
+//                             let polls =  &data_ref.polls;
+//                             macro_rules! bind {
+//                                 ($state:expr) => {
+//                                     ::rust_ui::view::state::AsPartiBinding::as_partial_binding($state,data.clone())
+//                                 };
+//                             }
+//                             ;
+//                             CreatePollView::new(<CreatePollView as ::rust_ui::PartialInitialisable>::PartialInit {
+//                                 on_create_poll:Some(Box::new(effect!(|e:usize|{
+//                                     println!("sdffsd");
+//                                 }))),shown: ::rust_ui::view::state::AsPartiBinding::as_partial_binding(show_create_poll_sheet,data.clone()), ..Default::default()
+//                             }).set_identity(1)
+//                         }
+//                     },2),)), ..Default::default()
+//                 }).set_identity(3),)), ..Default::default()
+//             }).set_identity(4)
+//         }
+//     }
+//     fn get_attached(&self) ->  &::std::option::Option<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>{
+//         &self.view
+//     }
+//     fn get_mut_attached(&mut self) ->  &mut ::std::option::Option<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>{
+//         &mut self.view
+//     }
+//     fn set_identity(&mut self,identity:usize){
+//         self.identity = identity;
+//     }
+//     fn get_identity(&self) -> usize {
+//         self.identity
+//     }
+//     fn clone_bindings(&self,into:&mut Self){
+//         into.show_create_poll_sheet = self.show_create_poll_sheet.clone();
+//         into.polls = self.polls.clone();
+//     }
+
+//     }
+
+
 
 
 
