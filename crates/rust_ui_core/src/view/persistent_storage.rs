@@ -30,7 +30,7 @@ impl Debug for GarbageCollectable {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone,Debug)]
 pub struct PersistentStorageRef {
     cell: Rc<RefCell<PersistentStorage>>,
 }

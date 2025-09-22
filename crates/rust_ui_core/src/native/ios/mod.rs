@@ -4,6 +4,7 @@ mod image;
 mod click_view;
 mod scroll_view;
 mod text_field;
+mod sheet;
 
 use crate::{icon::Icon, layout::ComputableLayout};
 use objc2::rc::Retained;
@@ -82,21 +83,6 @@ pub mod native {
         
         fn rerender(&self) {
             let mut data = self.borrow_mut();
-            // if let Some(k) = &mut data.get_mut_attached() {
-            //     let render_data = {
-            //         let mut b = k.borrow_mut();
-            //         b.children.destroy();
-            //         RenderData {
-            //             real_parent: b.parent.clone(),
-            //             // persistent_storage
-            //             //TODO: fix this clone to a ref
-            //             stack: crate::view::resources::ResourceStack::Owned(b.stack.clone()),
-            //         }
-            //     };
-            //     drop(data);
-            //     let _ = self.render(render_data);
-            // }
-
             if let Some(k) = &mut data.get_mut_attached()
                
             {
@@ -238,6 +224,11 @@ pub mod native {
 
             m.get_attached().clone().unwrap()
         }
+
+        fn set_identity(self, identity: usize) -> Self {
+            self.borrow_mut().set_identity(identity);
+            self
+        }
     }
 
     impl ComputableLayout for Rc<RefCell<MutableView>> {
@@ -247,11 +238,13 @@ pub mod native {
         }
 
         fn set_position(&mut self, to: layout::Position<f64>) {
+            self.borrow_mut().layout_position = to;
             self.borrow_mut().children.set_position(to);
         }
 
         fn destroy(&mut self) {
             self.borrow_mut().children.destroy();
+            // self.borrow_mut().parent = unsafe { Retained::from_raw(objc2::ffi::Nil) }.unwrap().downcast().unwrap();
         }
         fn preferred_size(&self, in_frame: &Size<f64>) -> Size<Option<f64>> {
             self.borrow().children.preferred_size(in_frame)

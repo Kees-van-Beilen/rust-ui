@@ -45,6 +45,11 @@ pub enum ResourceStack<'a> {
     Owned(Resources),
     Borrow(&'a mut Resources),
 }
+impl Default for ResourceStack<'_> {
+    fn default() -> Self {
+        ResourceStack::Owned(Default::default())
+    }
+}
 
 impl<'a> Clone for ResourceStack<'a> {
     fn clone(&self) -> Self {

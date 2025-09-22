@@ -45,6 +45,11 @@ define_class!(
         fn objc_resize(&self,to:NSSize) {
             self.resize_to(to);
         }
+
+        #[unsafe(method(bridge_window))]
+        fn bridge_window(&self) -> &UIWindow {
+            &self.ivars().window.get().unwrap()
+        }
     }
 
 
@@ -72,6 +77,7 @@ define_class!(
 // use objc2::ffi::id
 #[derive(Default)]
 pub struct RustViewControllerIVars {
+    pub on_disappear: OnceCell<Box<dyn Fn()>>
 }
 
 define_class!(
@@ -92,8 +98,16 @@ define_class!(
             let s = this.set_ivars(RustViewControllerIVars::default());
             unsafe { msg_send![super(s), init] }
         }
+        #[unsafe(method(viewDidDisappear:))]
+        fn did_disappear(&self,animated:bool){
+            let Some(func) = self.ivars().on_disappear.get() else {return};
+            func()
+        }
+
        
+
     }
+
 
     // SAFETY: `NSApplicationDelegate` has no safety requirements.
     unsafe impl UIContentContainer for RustViewController {
@@ -123,7 +137,6 @@ pub unsafe fn create_window(mtm: MainThreadMarker) -> Retained<UIWindow> {
     let mtm = MainThreadMarker::new().unwrap();
     let controller:Retained<RustViewController> = msg_send!(RustViewController::alloc(mtm), init);
     window.setRootViewController(Some(&controller));
-
     return window;
 }
 impl Delegate {

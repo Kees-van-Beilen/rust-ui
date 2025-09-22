@@ -1,4 +1,6 @@
-use rust_ui::{prelude::*, view::state::NextIdentity};
+use std::cell::Cell;
+
+use rust_ui::{prelude::*, view::state::NextIdentity,views::text::DebugText};
 
 use crate::Poll;
 
@@ -16,7 +18,7 @@ pub struct CreatePollView {
             spacing:Some(10.0),
             HStack {
                 Text("Create new poll")
-                .title()
+                    .title()
                 Spacer()
             }
             HStack {
@@ -24,7 +26,11 @@ pub struct CreatePollView {
                 Text("Title")
                 Spacer().frame(Frame::no_preference().width(15.0))
                 TextField(bind!(poll_name))
+                    .set_identity(10000)
             }
+            DebugText() |r_data| {
+                        format!("{:#?}",r_data)
+                    }
             PollOptionsView {
                 fields:bind!(field_names)
             }

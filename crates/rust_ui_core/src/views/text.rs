@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{impl_resource, view::resources::Resource};
+use crate::{impl_resource, layout::RenderObject, view::{persistent_storage::PersistentStorageRef, resources::{Resource, ResourceStack}}};
 
 /// Supports font weights 100-900, not every system treats font weights the same
 /// thats why this is an enum instead of a number
@@ -121,5 +121,44 @@ impl Text {
         Text {
             content: str.to_string(),
         }
+    }
+}
+
+
+#[derive(Debug)]
+pub struct RenderDataDebug<'a> {
+    pub stack:ResourceStack<'a>,
+    pub persistent_storage:PersistentStorageRef,
+}
+pub struct DebugText{
+    dbg_fn:Box<dyn Fn(RenderDataDebug)->String>
+}
+
+impl DebugText {
+    pub fn new(a:())->Self{
+        Self {
+            dbg_fn: Box::new(|_|String::default()),
+        }
+    }
+    pub fn with_capture_callback(mut self,callback:impl Fn(RenderDataDebug)->String+'static,_identity:usize) -> Self{
+        self.dbg_fn = Box::new(callback);
+        self
+    }
+}
+
+
+pub struct RenderedDebugText {
+    dbg_fn:Box<dyn Fn()->String>
+}
+
+impl RenderObject for DebugText {
+    type Output = <Text as RenderObject>::Output;
+
+    fn render(&self, data: crate::native::RenderData) -> Self::Output {
+        let out = (self.dbg_fn)(RenderDataDebug {
+            stack: data.stack.clone(),
+            persistent_storage: data.persistent_storage.clone(),
+        });
+        Text::new(out).render(data)
     }
 }

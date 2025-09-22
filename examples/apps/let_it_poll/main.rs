@@ -61,6 +61,7 @@ struct OverviewView {
 
     body:_ = view!{
         VStack {
+            Spacer().frame(Frame::no_preference().height(50.0))
             HStack {
                 Spacer()
                 Button("New poll") || {
