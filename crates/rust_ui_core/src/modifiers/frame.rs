@@ -59,14 +59,18 @@ impl<T: ComputableLayout> ComputableLayout for RenderedFrameView<T> {
         self.1.preferred
     }
     fn set_size(&mut self, to: crate::layout::Size<f64>) {
-        // to.width -= self.1.left + self.1.right;
-        // to.height -= self.1.top + self.1.bottom;
         self.0.set_size(to);
     }
 
+    fn max_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
+        self.1.max
+    }
+
+    fn min_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
+        self.1.min
+    }
+
     fn set_position(&mut self, to: crate::layout::Position<f64>) {
-        // to.x += self.1.left;
-        // to.y += self.1.top;
         self.0.set_position(to);
     }
 

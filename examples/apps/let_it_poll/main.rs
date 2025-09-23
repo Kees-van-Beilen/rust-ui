@@ -1,4 +1,4 @@
-#![feature(more_qualified_paths,default_field_values)]
+#![feature(more_qualified_paths, default_field_values)]
 use std::cell::Cell;
 
 // the let it poll app
@@ -7,14 +7,12 @@ use rust_ui::view::dyn_render::DynGroup;
 use rust_ui::view::mutable::MutableViewRerender;
 use rust_ui::view::state::{Identifiable, PartialAnyBinding, PartialBinding};
 
-
 mod create_poll_view;
 use create_poll_view::CreatePollView;
 
-
 pub enum GlobalState {
     WelcomeScreen,
-    Overview
+    Overview,
 }
 
 #[ui(main)]
@@ -30,29 +28,27 @@ struct RootView {
     
 }
 
-#[derive(Clone,Default)]
+#[derive(Clone, Default)]
 pub struct Poll {
-    identifier:usize,
-    name:String,
-    fields:Vec<String>
+    identifier: usize,
+    name: String,
+    fields: Vec<String>,
 }
 impl Identifiable for Poll {
     type Value = Poll;
 
-    fn identity(&self)->usize {
+    fn identity(&self) -> usize {
         self.identifier
     }
 
-    fn value(&self)->&Self::Value {
+    fn value(&self) -> &Self::Value {
         self
     }
 
-    fn value_mut(&mut self)->&mut Self::Value {
+    fn value_mut(&mut self) -> &mut Self::Value {
         self
     }
 }
-
-
 
 #[ui]
 struct OverviewView {
@@ -100,8 +96,6 @@ struct OverviewPollView {
         }.margin(Margin::all(5.0)).background(ColorView(Color::BLACK)).margin(Margin::all(5.0))
     }
 }
-
-
 
 // struct OverviewView {
 //     show_create_poll_sheet: ::rust_ui::view::state::PartialState<bool> ,polls: ::rust_ui::view::state::PartialState<Vec<Poll>> ,view: ::std::option::Option<::std::rc::Rc<::std::cell::RefCell<::rust_ui::native::MutableView>>>,identity:usize
@@ -234,12 +228,6 @@ struct OverviewPollView {
 //     }
 
 //     }
-
-
-
-
-
-
 
 #[ui]
 struct WelcomeScreen {

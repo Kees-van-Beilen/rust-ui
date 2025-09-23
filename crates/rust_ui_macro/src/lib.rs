@@ -6,9 +6,8 @@ use crate::derive_ui::{StructInfo, UIClassification};
 
 mod derive_ui;
 
-
-fn write_main(out:&mut TokenStream,struct_info:&StructInfo){
-out.extend([
+fn write_main(out: &mut TokenStream, struct_info: &StructInfo) {
+    out.extend([
                 TokenTree::Ident(Ident::new("fn", Span::call_site())),
                 TokenTree::Ident(Ident::new("main", Span::call_site())),
                 TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::new())),
@@ -40,7 +39,7 @@ out.extend([
             ]);
 }
 #[proc_macro_attribute]
-pub fn ui(attr:TokenStream,item:TokenStream)->TokenStream{
+pub fn ui(attr: TokenStream, item: TokenStream) -> TokenStream {
     let cls = UIClassification::from_ts(attr.clone());
 
     // println!("habibibibi");
@@ -53,21 +52,20 @@ pub fn ui(attr:TokenStream,item:TokenStream)->TokenStream{
             // dbg!(&struct_info);
             // out.extend(TokenStream::from_str("fn main(){ rust_ui::native::launch_application_with_view() }").unwrap());
             derive_ui::create_normalized_struct_mutable_view(&mut out, &struct_info);
-            write_main(&mut out,&struct_info);
+            write_main(&mut out, &struct_info);
             out
-
         }
         UIClassification::View => {
             let mut out = TokenStream::new();
             let struct_info = derive_ui::get_struct_info(item.clone());
-             derive_ui::create_normalized_struct_mutable_view(&mut out, &struct_info);
+            derive_ui::create_normalized_struct_mutable_view(&mut out, &struct_info);
             out
-        },
+        }
         UIClassification::PureView => todo!(),
     }
 }
 /// Usage:
-/// 
+///
 /// ```
 /// ui_decl!(
 ///     ui(main) struct RootView {
@@ -78,13 +76,12 @@ pub fn ui(attr:TokenStream,item:TokenStream)->TokenStream{
 /// )
 /// ```
 #[proc_macro]
-pub fn ui_decl(ts:TokenStream)->TokenStream{
-
+pub fn ui_decl(ts: TokenStream) -> TokenStream {
     let mut iter = ts.into_iter();
 
     match iter.next() {
-        Some(TokenTree::Ident(i)) if i.to_string() == "ui" => {},
-        _=>panic!("expected: `ui(main)` or `ui`")
+        Some(TokenTree::Ident(i)) if i.to_string() == "ui" => {}
+        _ => panic!("expected: `ui(main)` or `ui`"),
     }
 
     let mut item = TokenStream::from_iter(iter.clone());
@@ -94,14 +91,12 @@ pub fn ui_decl(ts:TokenStream)->TokenStream{
             item = TokenStream::from_iter(iter);
             g.stream()
         }
-        _=>TokenStream::new()
+        _ => TokenStream::new(),
     };
-
 
     let cls = UIClassification::from_ts(attr);
 
     // println!("habibibibi");
-    
 
     match cls {
         UIClassification::Main => {
@@ -111,11 +106,10 @@ pub fn ui_decl(ts:TokenStream)->TokenStream{
             // dbg!(&struct_info);
             // out.extend(TokenStream::from_str("fn main(){ rust_ui::native::launch_application_with_view() }").unwrap());
             derive_ui::create_normalized_struct_mutable_view(&mut out, &struct_info);
-            write_main(&mut out,&struct_info);
+            write_main(&mut out, &struct_info);
 
             //creare a struct __StructName__PartialInit
             out
-
         }
         UIClassification::View => todo!(),
         UIClassification::PureView => todo!(),

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained};
 use objc2_foundation::{NSNotification, NSPoint, NSString};
 use objc2_ui_kit::{UIControlEvents, UITextField, UITextFieldDelegate};
@@ -54,7 +56,6 @@ impl RustTextField {
             )
         };
         s
-        // t.ivars().binding.swap(&RefCell::new(Some(binding)));
     }
 }
 
@@ -85,21 +86,19 @@ impl RenderObject for TextField {
                 .borrow()
                 .get::<Retained<RustTextField>>(identity)
             {
-                // data.real_parent.addSubview(view);
                 let ns_view = view.clone();
                 let _ = view;
                 let str = NSString::from_str(self.text_binding.get().as_str());
                 ns_view.setText(Some(&str));
-                // ns_view.stringValue().
                 NativeTextField { ns_view }
             } else {
                 let mtm = MainThreadMarker::new().unwrap();
-                // let bo = clone_dyn::clone_into_box(&self.text_binding);
                 let ns_view = RustTextField::new(mtm, self.text_binding.clone_box());
                 let str = NSString::from_str(self.text_binding.get().as_str());
                 ns_view.setText(Some(&str));
                 {
                     let ns_view = ns_view.clone();
+
                     data.persistent_storage
                         .borrow_mut()
                         .register_for_garbage_collection(identity, move || {

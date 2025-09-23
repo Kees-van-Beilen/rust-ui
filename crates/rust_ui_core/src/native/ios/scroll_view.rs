@@ -3,7 +3,10 @@ use objc2::{AnyThread, MainThreadMarker, rc::Retained};
 use objc2_quartz_core::{CALayer, kCAGravityResizeAspect, kCAGravityResizeAspectFill};
 use objc2_ui_kit::{UIScrollView, UIView};
 
-use crate::{view::persistent_storage::PersistentStorageRef, views::{Axis, ScrollBehavior}};
+use crate::{
+    view::persistent_storage::PersistentStorageRef,
+    views::{Axis, ScrollBehavior},
+};
 
 // use crate::{layout::Size, native::macos::nsview_setposition, views::{Axis, ScrollBehavior}};
 
@@ -15,7 +18,7 @@ pub struct NativeScrollView<Child: crate::layout::ComputableLayout> {
 }
 
 pub struct ScrollViewStorage {
-    storage:PersistentStorageRef,
+    storage: PersistentStorageRef,
     ns_view: Retained<UIScrollView>,
     content_view: Retained<UIView>,
 }
@@ -29,13 +32,10 @@ impl<T: crate::layout::RenderObject> crate::layout::RenderObject for crate::view
     }
 
     fn render(&self, mut data: crate::native::RenderData) -> Self::Output {
-
         let identity = self.identity;
-        let mut bm = data.persistent_storage
-            .borrow_mut();
+        let mut bm = data.persistent_storage.borrow_mut();
 
-        let view = bm
-            .get_or_register_gc(identity, || unsafe {
+        let view = bm.get_or_register_gc(identity, || unsafe {
             let mtm = MainThreadMarker::new().unwrap();
 
             // let view = objc2_app_kit::NSScrollView::new(mtm);
@@ -45,21 +45,24 @@ impl<T: crate::layout::RenderObject> crate::layout::RenderObject for crate::view
 
             let content_view = UIView::new(mtm);
             data.real_parent = content_view.clone();
-            
+
             view.addSubview(&content_view);
-            (ScrollViewStorage {
-                // child: self.child.render(data),
-                ns_view: view.clone(),
-                // axis: self.axis,
-                content_view,
-                storage:Default::default()
-            },move ||view.removeFromSuperview())
-            });
-        
+            (
+                ScrollViewStorage {
+                    // child: self.child.render(data),
+                    ns_view: view.clone(),
+                    // axis: self.axis,
+                    content_view,
+                    storage: Default::default(),
+                },
+                move || view.removeFromSuperview(),
+            )
+        });
+
         let ns_view = view.ns_view.clone();
         let content_view = view.content_view.clone();
         data.real_parent = content_view.clone();
-        let storage= view.storage.clone();
+        let storage = view.storage.clone();
         bm.garbage_collection_mark_used(identity);
         drop(bm);
         data.persistent_storage = storage.clone();
@@ -72,22 +75,19 @@ impl<T: crate::layout::RenderObject> crate::layout::RenderObject for crate::view
             axis: self.axis,
             child,
         }
-
     }
-
 }
 
 impl<T: crate::layout::ComputableLayout> crate::layout::ComputableLayout for NativeScrollView<T> {
     fn set_size(&mut self, to: crate::prelude::Size<f64>) {
         // unsafe {
-            let mut frame = self.ns_view.frame();
-            frame.size = to.into();
-            self.ns_view.setFrame(frame);
+        let mut frame = self.ns_view.frame();
+        frame.size = to.into();
+        self.ns_view.setFrame(frame);
         // };
 
         let mut child_size = to;
         if self.axis.x == ScrollBehavior::Scroll || self.axis.y == ScrollBehavior::Scroll {
-
             let preferred_size = self.child.preferred_size(&to);
             match (self.axis.x, preferred_size.width) {
                 (ScrollBehavior::Scroll, Some(width)) if width > to.width => {
@@ -128,6 +128,8 @@ impl<T: crate::layout::ComputableLayout> crate::layout::ComputableLayout for Nat
     }
 
     fn destroy(&mut self) {
-        unsafe { self.child.destroy(); };
+        unsafe {
+            self.child.destroy();
+        };
     }
 }

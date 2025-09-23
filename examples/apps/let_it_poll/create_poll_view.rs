@@ -1,9 +1,12 @@
-use std::cell::Cell;
+use std::{cell::Cell, rc::Rc};
 
-use rust_ui::{prelude::*, view::state::NextIdentity,views::text::DebugText};
+use rust_ui::{
+    prelude::*,
+    view::state::NextIdentity,
+    views::text::{DebugText, RenderDataDebug},
+};
 
 use crate::Poll;
-
 
 #[ui]
 pub struct CreatePollView {
@@ -20,6 +23,9 @@ pub struct CreatePollView {
                 Text("Create new poll")
                     .title()
                 Spacer()
+
+                // DebugText() |r_data| {format!("{:#?}",Rc::as_ptr(&(r_data as RenderDataDebug).persistent_storage.cell))}
+                // DebugText() |_r_data| {format!("{:#?}",std::time::SystemTime::now())}
             }
             HStack {
                 spacing:Some(10.0),
@@ -28,9 +34,6 @@ pub struct CreatePollView {
                 TextField(bind!(poll_name))
                     .set_identity(10000)
             }
-            DebugText() |r_data| {
-                        format!("{:#?}",r_data)
-                    }
             PollOptionsView {
                 fields:bind!(field_names)
             }
@@ -62,10 +65,16 @@ struct PollOptionsView {
         HStack {
             spacing:Some(10.0),
             ColorView(Color::WHITE).frame(Frame::no_preference().width(1.0))
-            ScrollView {
-                y:Some(ScrollBehavior::Scroll),
+            // ScrollView {
+                // y:Some(ScrollBehavior::Scroll),
                 VStack {
                     spacing:Some(6.0),
+                    // DebugText() |r_data| {format!("{:#?}",Rc::as_ptr(&(r_data as RenderDataDebug).persistent_storage.cell))}
+                    // DebugText() |r_data| { format!("{:#?}",r_data) }
+                    // DebugText() |_r_data| {format!("{:#?}",std::time::SystemTime::now())}
+
+                    // DebugText() |r_data| { format!("{:#?}",r_data) }
+                    // Text(format!("count: {identity_counter} {}",fields.get().len()))
                     for (identity,field) in fields.iter() {
                         TextField(field)
                             .set_identity(identity)
@@ -79,8 +88,8 @@ struct PollOptionsView {
                         *identity_counter.get_mut() += 1;
                     }
                 }.align(TextAlignment::Leading).frame(Frame::no_preference())
-            }
-            
+            // }
+            // 
         }
     }
 }

@@ -3,10 +3,9 @@ use objc2_app_kit::NSScrollerStyle;
 
 use crate::{
     native::macos::nsview_setposition,
-    view::persistent_storage::{ PersistentStorageRef},
+    view::persistent_storage::PersistentStorageRef,
     views::{Axis, ScrollBehavior},
 };
-
 
 pub struct NativeScrollView<Child: crate::layout::ComputableLayout> {
     ns_view: Retained<objc2_app_kit::NSScrollView>,
@@ -15,9 +14,8 @@ pub struct NativeScrollView<Child: crate::layout::ComputableLayout> {
     child: Child,
 }
 
-
 struct ScrollViewStorage {
-    storage:PersistentStorageRef,
+    storage: PersistentStorageRef,
     ns_view: Retained<objc2_app_kit::NSScrollView>,
     content_view: Retained<objc2_app_kit::NSView>,
 }
@@ -31,60 +29,52 @@ impl<T: crate::layout::RenderObject> crate::layout::RenderObject for crate::view
     }
 
     fn render(&self, mut data: crate::native::RenderData) -> Self::Output {
-
-
         let identity = self.identity;
-        let mut bm = data.persistent_storage
-            .borrow_mut();
+        let mut bm = data.persistent_storage.borrow_mut();
 
+        let view = bm.get_or_register_gc(identity, || unsafe {
+            let mtm = MainThreadMarker::new().unwrap();
+            let view = objc2_app_kit::NSScrollView::new(mtm);
+            view.setDrawsBackground(false);
+            view.setScrollerStyle(NSScrollerStyle::Overlay);
+            if self.axis.y == ScrollBehavior::Scroll {
+                view.setHasVerticalScroller(true);
+            }
+            if self.axis.x == ScrollBehavior::Scroll {
+                view.setHasHorizontalScroller(true);
+            }
+            data.real_parent.addSubview(&view);
+            let content_view = objc2_app_kit::NSView::new(mtm);
+            data.real_parent = content_view.clone();
 
-        
-        let view = bm
-            .get_or_register_gc(identity, || {
-                unsafe {
-                    let mtm = MainThreadMarker::new().unwrap();
-                    let view = objc2_app_kit::NSScrollView::new(mtm);
-                    view.setDrawsBackground(false);
-                    view.setScrollerStyle(NSScrollerStyle::Overlay);
-                    if self.axis.y == ScrollBehavior::Scroll {
-                        view.setHasVerticalScroller(true);
-                    }
-                    if self.axis.x == ScrollBehavior::Scroll {
-                        view.setHasHorizontalScroller(true);
-                    }
-                    data.real_parent.addSubview(&view);
-                    let content_view = objc2_app_kit::NSView::new(mtm);
-                    data.real_parent = content_view.clone();
-
-                    view.setDocumentView(Some(&content_view));
-                    (ScrollViewStorage {
-                        storage: Default::default(),
-                        ns_view: view.clone(),
-                        content_view,
-                    },move ||view.removeFromSuperview())
-                }
-            });
-
-
+            view.setDocumentView(Some(&content_view));
+            (
+                ScrollViewStorage {
+                    storage: Default::default(),
+                    ns_view: view.clone(),
+                    content_view,
+                },
+                move || view.removeFromSuperview(),
+            )
+        });
 
         // unsafe {
-            let ns_view = view.ns_view.clone();
-            let content_view = view.content_view.clone();
-            data.real_parent = view.content_view.clone();
-            let storage = view.storage.clone();
-            bm.garbage_collection_mark_used(identity);
-            drop(bm);
-            data.persistent_storage = storage.clone();
+        let ns_view = view.ns_view.clone();
+        let content_view = view.content_view.clone();
+        data.real_parent = view.content_view.clone();
+        let storage = view.storage.clone();
+        bm.garbage_collection_mark_used(identity);
+        drop(bm);
+        data.persistent_storage = storage.clone();
 
-            
-            let child = self.child.render(data);
-            
-            NativeScrollView {
-                child: child,
-                ns_view: ns_view,
-                axis: self.axis,
-                content_view,
-            }
+        let child = self.child.render(data);
+
+        NativeScrollView {
+            child: child,
+            ns_view: ns_view,
+            axis: self.axis,
+            content_view,
+        }
         // }
     }
 }

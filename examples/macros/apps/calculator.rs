@@ -5,9 +5,8 @@
 // - a clear button
 // - a button to switch signs
 // Try adding these features yourself
-#![feature(more_qualified_paths,default_field_values)]
+#![feature(more_qualified_paths, default_field_values)]
 use rust_ui::prelude::*;
-
 
 // we first create some data types, these represent the mathematical operations you may perform
 enum Op {
@@ -18,12 +17,12 @@ enum Op {
 
 impl Op {
     // a utility function we call later
-    pub fn from_char(c:char)->Option<Self> {
+    pub fn from_char(c: char) -> Option<Self> {
         match c {
-            'x'=>Some(Self::Mul),
-            '+'=>Some(Self::Add),
-            '-'=>Some(Self::Sub),
-            _=>None
+            'x' => Some(Self::Mul),
+            '+' => Some(Self::Add),
+            '-' => Some(Self::Sub),
+            _ => None,
         }
     }
 }
@@ -33,33 +32,36 @@ enum CalculatorState {
     // Here we display the first number wer are entering
     FirstNumber(String),
     // Here we have received the mathematical operation we will be performing
-    // and we display the second number we are entering. 
+    // and we display the second number we are entering.
     // We still store the first number, that way we can calculate the result when the '=' button is pressed.
-    SecondNumber{
-        first_number:String,
-        op:Op,
-        second_number:String,
+    SecondNumber {
+        first_number: String,
+        op: Op,
+        second_number: String,
     },
     // here we display the result after the '=' button has been pressed
-    Result(String)
+    Result(String),
 }
 
 impl CalculatorState {
     // this is a utility function.
     // These function are handy because we wouldn't want to write big logic heavy code inside of our ui code
-    pub fn text(&self)->&str{
+    pub fn text(&self) -> &str {
         match self {
             CalculatorState::FirstNumber(num) => &num,
-            CalculatorState::SecondNumber { first_number:_, op:_, second_number } => &second_number,
+            CalculatorState::SecondNumber {
+                first_number: _,
+                op: _,
+                second_number,
+            } => &second_number,
             CalculatorState::Result(num) => &num,
         }
     }
 }
 
 // define the color of the buttons
-const GREY:Color = Color::oklch(0.38, 0.0, 356.82);
-const PINK:Color = Color::oklch(0.61, 0.16, 356.82);
-
+const GREY: Color = Color::oklch(0.38, 0.0, 356.82);
+const PINK: Color = Color::oklch(0.61, 0.16, 356.82);
 
 // now we start defining our ui components
 // first the calculator buttons
@@ -127,7 +129,6 @@ struct CalcButtonView {
             
     }
 }
-
 
 // This is the root view, which we decorate with the main attribute
 // that marks it the entrypoint of the application

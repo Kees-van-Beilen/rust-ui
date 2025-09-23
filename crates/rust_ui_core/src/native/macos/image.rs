@@ -1,34 +1,38 @@
-use objc2::{rc::Retained, AnyThread, MainThreadMarker};
-use objc2_quartz_core::{kCAGravityResizeAspect, kCAGravityResizeAspectFill, CALayer};
+use objc2::{AnyThread, MainThreadMarker, rc::Retained};
+use objc2_quartz_core::{CALayer, kCAGravityResizeAspect, kCAGravityResizeAspectFill};
 
 use crate::native::macos::NSViewRepresentable;
 
 pub struct NativeImageHandle(Retained<objc2_app_kit::NSImage>);
 
 impl NativeImageHandle {
-    pub fn from_path(path:impl ToString)->Self{
+    pub fn from_path(path: impl ToString) -> Self {
         let path = path.to_string();
-        let file_name =  objc2_foundation::NSString::from_str(&path);
-        unsafe { 
+        let file_name = objc2_foundation::NSString::from_str(&path);
+        unsafe {
             NativeImageHandle(
-                objc2_app_kit::NSImage::initWithContentsOfFile(objc2_app_kit::NSImage::alloc(), &file_name).unwrap()
+                objc2_app_kit::NSImage::initWithContentsOfFile(
+                    objc2_app_kit::NSImage::alloc(),
+                    &file_name,
+                )
+                .unwrap(),
             )
         }
     }
 }
 
 pub struct ImageView {
-    ns_view:Retained<objc2_app_kit::NSView>
+    ns_view: Retained<objc2_app_kit::NSView>,
 }
 
 impl crate::layout::RenderObject for crate::views::ImageView {
-    type Output=ImageView;
+    type Output = ImageView;
 
     fn render(&self, data: crate::native::RenderData) -> Self::Output {
         let view = unsafe {
             let mtm = MainThreadMarker::new().unwrap();
 
-            let view = objc2_app_kit::NSView::new(mtm) ;
+            let view = objc2_app_kit::NSView::new(mtm);
             let layer = CALayer::new();
             layer.setContentsGravity(match self.scaling_mode {
                 crate::views::ImageScalingMode::Fit => kCAGravityResizeAspect,
@@ -46,9 +50,7 @@ impl crate::layout::RenderObject for crate::views::ImageView {
             data.real_parent.addSubview(&view);
             view
         };
-        ImageView {
-            ns_view: view,
-        }
+        ImageView { ns_view: view }
     }
 }
 
@@ -57,4 +59,3 @@ impl NSViewRepresentable for ImageView {
         &self.ns_view
     }
 }
-

@@ -1,6 +1,13 @@
 use std::rc::Rc;
 
-use crate::{impl_resource, layout::RenderObject, view::{persistent_storage::PersistentStorageRef, resources::{Resource, ResourceStack}}};
+use crate::{
+    impl_resource,
+    layout::RenderObject,
+    view::{
+        persistent_storage::PersistentStorageRef,
+        resources::{Resource, ResourceStack},
+    },
+};
 
 /// Supports font weights 100-900, not every system treats font weights the same
 /// thats why this is an enum instead of a number
@@ -38,7 +45,7 @@ pub enum FontFamily {
     /// Reference a custom font family by name
     /// This does require the font to be available as a system font
     /// or be properly bundled with the application.
-    /// 
+    ///
     /// This currently does nothing, as custom fonts aren't yet implemented
     Custom(Rc<str>),
 }
@@ -116,7 +123,7 @@ pub struct Text {
 impl Text {
     ///
     /// Create a new Text view using the specified string.
-    /// 
+    ///
     pub fn new(str: impl ToString) -> Text {
         Text {
             content: str.to_string(),
@@ -124,32 +131,31 @@ impl Text {
     }
 }
 
-
 #[derive(Debug)]
 pub struct RenderDataDebug<'a> {
-    pub stack:ResourceStack<'a>,
-    pub persistent_storage:PersistentStorageRef,
+    pub stack: ResourceStack<'a>,
+    pub persistent_storage: PersistentStorageRef,
 }
-pub struct DebugText{
-    dbg_fn:Box<dyn Fn(RenderDataDebug)->String>
+pub struct DebugText {
+    dbg_fn: Box<dyn Fn(RenderDataDebug) -> String>,
 }
 
 impl DebugText {
-    pub fn new(a:())->Self{
+    pub fn new(_: ()) -> Self {
         Self {
-            dbg_fn: Box::new(|_|String::default()),
+            dbg_fn: Box::new(|_| String::default()),
         }
     }
-    pub fn with_capture_callback(mut self,callback:impl Fn(RenderDataDebug)->String+'static,_identity:usize) -> Self{
+    pub fn with_capture_callback(
+        mut self,
+        callback: impl Fn(RenderDataDebug) -> String + 'static,
+        _identity: usize,
+    ) -> Self {
         self.dbg_fn = Box::new(callback);
         self
     }
 }
 
-
-pub struct RenderedDebugText {
-    dbg_fn:Box<dyn Fn()->String>
-}
 
 impl RenderObject for DebugText {
     type Output = <Text as RenderObject>::Output;

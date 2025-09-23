@@ -29,7 +29,7 @@ pub struct AppDelegateIvars {
     //this could be cleaner tbh.
     pub signal: Cell<Option<Box<dyn FnOnce(&Delegate)>>>,
 
-    pub storage:PersistentStorageRef
+    pub storage: PersistentStorageRef,
 }
 
 define_class!(
@@ -56,7 +56,6 @@ define_class!(
                 .unwrap()
                 .downcast::<NSApplication>()
                 .unwrap();
-
 
             // SAFETY: We disable releasing when closed below.
             let window = unsafe {
@@ -135,7 +134,7 @@ impl Delegate {
         let root_res = Resources::default();
         let root: Box<dyn ComputableLayout> = Box::new(object.render(super::native::RenderData {
             real_parent: view,
-            persistent_storage:self.ivars().storage.clone(),
+            persistent_storage: self.ivars().storage.clone(),
             stack: crate::view::resources::ResourceStack::Owned(root_res),
         }));
         self.ivars().root.replace(Some(root));

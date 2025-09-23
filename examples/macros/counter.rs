@@ -1,6 +1,5 @@
-#![feature(more_qualified_paths,default_field_values)]
+#![feature(more_qualified_paths, default_field_values)]
 use rust_ui::prelude::*;
-
 
 #[ui(main)]
 
@@ -19,4 +18,3 @@ struct RootView {
         }
     }
 }
-

@@ -1,6 +1,5 @@
 use crate::layout::{ComputableLayout, Position, RenderObject, Size};
 
-
 /*
 When used in a layout, takes all the remaining space.
 For example:
@@ -29,7 +28,7 @@ impl ComputableLayout for Spacer {
 }
 
 impl Spacer {
-    pub fn new(_:impl Into<()>)->Self{
+    pub fn new(_: impl Into<()>) -> Self {
         Self
     }
 }

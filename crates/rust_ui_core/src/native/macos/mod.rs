@@ -78,7 +78,7 @@ pub mod native {
         layout::{self, ComputableLayout, Position, RenderObject, Size},
         view::{
             mutable::MutableViewRerender,
-            persistent_storage::{ PersistentStorageRef},
+            persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
         },
         views::{FontFamily, FontSize, FontWeight, TextAlignment},
@@ -107,9 +107,6 @@ pub mod native {
                 let render_data = {
                     let mut b = k.borrow_mut();
                     b.children.destroy();
-                    b.persistent_storage
-                        .borrow_mut()
-                        .garbage_collection_unset_all();
                     let render_data = RenderData {
                         real_parent: b.parent.clone().unwrap(),
 
@@ -124,14 +121,6 @@ pub mod native {
                 let _ = self.render(render_data);
             } else {
                 drop(data);
-            }
-
-            //this needs to be done better
-            if let Some(a) = self.borrow().get_attached() {
-                a.borrow()
-                    .persistent_storage
-                    .borrow_mut()
-                    .garbage_collection_cycle();
             }
         }
     }
@@ -172,7 +161,16 @@ pub mod native {
             };
             drop(borrow);
 
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_unset_all();
             let r = T::children(self.clone()).render(new_data.clone());
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_cycle();
+
             let view = Rc::new(RefCell::new(MutableView {
                 children: Box::new(r),
                 layout_size: layout::Size {

@@ -1,10 +1,10 @@
 mod app;
 mod button;
-mod image;
 mod click_view;
+mod image;
 mod scroll_view;
-mod text_field;
 mod sheet;
+mod text_field;
 
 use crate::{icon::Icon, layout::ComputableLayout};
 use objc2::rc::Retained;
@@ -54,7 +54,14 @@ pub mod native {
         app::{Delegate, ON_LAUNCH_SIGNAL},
     };
     use crate::{
-        icon::Icon, layout::{self, ComputableLayout, Position, RenderObject, Size}, view::{mutable::MutableViewRerender, persistent_storage::PersistentStorageRef, resources::{Resource, ResourceStack, Resources}}, views::{tabbar::RenderedTabData, FontFamily, FontSize, FontWeight, TextAlignment}
+        icon::Icon,
+        layout::{self, ComputableLayout, Position, RenderObject, Size},
+        view::{
+            mutable::MutableViewRerender,
+            persistent_storage::PersistentStorageRef,
+            resources::{Resource, ResourceStack, Resources},
+        },
+        views::{FontFamily, FontSize, FontWeight, TextAlignment, tabbar::RenderedTabData},
     };
     use block2::RcBlock;
     use objc2::{ClassType, MainThreadMarker, MainThreadOnly, rc::Retained};
@@ -64,8 +71,8 @@ pub mod native {
         NSLineBreakMode, NSTextAlignment, UIAction, UIApplication, UIButton, UIColor,
         UIControlState, UIFontWeight, UIFontWeightBlack, UIFontWeightBold, UIFontWeightHeavy,
         UIFontWeightLight, UIFontWeightMedium, UIFontWeightRegular, UIFontWeightSemibold,
-        UIFontWeightThin, UIFontWeightUltraLight, UIImage, UILabel, UITab,
-        UITabBarController, UIView, UIViewController,
+        UIFontWeightThin, UIFontWeightUltraLight, UIImage, UILabel, UITab, UITabBarController,
+        UIView, UIViewController,
     };
     use std::{cell::RefCell, ptr::NonNull, rc::Rc};
 
@@ -75,23 +82,16 @@ pub mod native {
         layout_size: layout::Size<f64>,
         stack: crate::view::resources::Resources,
         persistent_storage: PersistentStorageRef,
-        layout_position:Position<f64>,
-
+        layout_position: Position<f64>,
     }
 
-    impl<T: crate::view::mutable::MutableView+'static> MutableViewRerender for Rc<RefCell<T>> {
-        
+    impl<T: crate::view::mutable::MutableView + 'static> MutableViewRerender for Rc<RefCell<T>> {
         fn rerender(&self) {
             let mut data = self.borrow_mut();
-            if let Some(k) = &mut data.get_mut_attached()
-               
-            {
+            if let Some(k) = &mut data.get_mut_attached() {
                 let render_data = {
                     let mut b = k.borrow_mut();
                     b.children.destroy();
-                    b.persistent_storage
-                        .borrow_mut()
-                        .garbage_collection_unset_all();
                     let render_data = RenderData {
                         real_parent: b.parent.clone(),
 
@@ -107,17 +107,7 @@ pub mod native {
             } else {
                 drop(data);
             }
-
-            //this needs to be done better
-            if let Some(a) = self.borrow().get_attached() {
-                a.borrow()
-                    .persistent_storage
-                    .borrow_mut()
-                    .garbage_collection_cycle();
-            }
         }
-        
-
     }
 
     fn font_weight_to_ui_font_weight(weight: FontWeight) -> UIFontWeight {
@@ -136,7 +126,7 @@ pub mod native {
         }
     }
 
-    impl<T: crate::view::mutable::MutableView+'static> RenderObject for Rc<RefCell<T>> {
+    impl<T: crate::view::mutable::MutableView + 'static> RenderObject for Rc<RefCell<T>> {
         type Output = Rc<RefCell<crate::native::MutableView>>;
 
         fn render(&self, data: crate::native::RenderData) -> Self::Output {
@@ -149,7 +139,7 @@ pub mod native {
             //     },
             //     parent: data.real_parent,
             //     stack: data.stack.as_ref().clone(),
-                
+
             // }));
             // let mut m = self.borrow_mut();
             // let mut attached = m.get_mut_attached();
@@ -194,8 +184,16 @@ pub mod native {
                 persistent_storage: storage.clone(),
             };
             drop(borrow);
-
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_unset_all();
             let r = T::children(self.clone()).render(new_data.clone());
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_cycle();
+
             let view = Rc::new(RefCell::new(MutableView {
                 children: Box::new(r),
                 layout_size: layout::Size {
@@ -297,8 +295,11 @@ pub mod native {
                 view.setText(Some(&str));
                 view.sizeToFit();
 
-
-                let alignment = data.stack.get_resource::<TextAlignment>().copied().unwrap_or(TextAlignment::Center);
+                let alignment = data
+                    .stack
+                    .get_resource::<TextAlignment>()
+                    .copied()
+                    .unwrap_or(TextAlignment::Center);
                 view.setTextAlignment(match alignment {
                     TextAlignment::Leading => NSTextAlignment::Left,
                     TextAlignment::Center => NSTextAlignment::Center,
@@ -308,7 +309,7 @@ pub mod native {
                 view.setNumberOfLines(0);
 
                 use objc2_ui_kit::UIFont;
-                
+
                 let font_family = data
                     .stack
                     .get_resource::<FontFamily>()
@@ -432,7 +433,7 @@ pub mod native {
                 let d = RenderData {
                     real_parent: self.real_parent.clone(),
                     stack: ResourceStack::Borrow(stack_e),
-                    persistent_storage:self.persistent_storage.clone()
+                    persistent_storage: self.persistent_storage.clone(),
                 };
 
                 with_fn(d)
@@ -489,7 +490,7 @@ pub mod native {
                     i += 1;
                     RenderData {
                         real_parent: vc.view().unwrap(),
-                        
+
                         //Tab bar cannot contain any styling rule
                         stack: ResourceStack::Owned(Default::default()),
                         persistent_storage: todo!(),
@@ -516,8 +517,6 @@ pub mod native {
             self.views.iter_mut().for_each(|e| e.destroy());
         }
     }
-
-
 
     pub fn launch_application_with_view(root: impl RenderObject + 'static) {
         //setup the default filemanager
