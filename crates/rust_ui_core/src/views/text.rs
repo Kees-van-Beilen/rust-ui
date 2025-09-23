@@ -10,8 +10,10 @@ use crate::{
 };
 
 /// Supports font weights 100-900, not every system treats font weights the same
-/// thats why this is an enum instead of a number
-#[derive(Clone, Copy, Debug, Default)]
+/// thats why this is an enum instead of a number.
+/// 
+/// In the future this enum will change to a struct (to accommodate variable weights)
+#[derive(Clone, Copy, Debug, Default,PartialEq)]
 pub enum FontWeight {
     Ultralight,
     Thin,
@@ -25,7 +27,8 @@ pub enum FontWeight {
     Black,
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+/// The alignment of text elements
+#[derive(Clone, Copy, Debug, Default,PartialEq,Eq)]
 pub enum TextAlignment {
     /// In most cases this means to the left
     Leading,
@@ -36,7 +39,8 @@ pub enum TextAlignment {
     Trailing,
 }
 
-#[derive(Default, Clone, Debug)]
+/// The font family to use for text elements.
+#[derive(Default, Clone, Debug,PartialEq)]
 pub enum FontFamily {
     /// Use the default system bundled font.
     /// (This may not be the same as the default system font)
@@ -47,11 +51,17 @@ pub enum FontFamily {
     /// or be properly bundled with the application.
     ///
     /// This currently does nothing, as custom fonts aren't yet implemented
+    #[doc(hidden)]
     Custom(Rc<str>),
 }
 
-#[derive(Clone, Copy, Debug)]
+/// The font size to use for text elements.
+#[derive(Clone, Copy, Debug,PartialEq)]
 pub struct FontSize(pub f64);
+
+/// The color of elements that can be tinted.
+#[derive(Clone,Copy,PartialEq)]
+pub struct TintColor(bevy_color::Color);
 
 impl_resource!(FontSize);
 impl_resource!(FontWeight);
@@ -131,21 +141,30 @@ impl Text {
     }
 }
 
+
 #[derive(Debug)]
 pub struct RenderDataDebug<'a> {
     pub stack: ResourceStack<'a>,
     pub persistent_storage: PersistentStorageRef,
 }
+///
+/// Debug text allows you to introspect the current render data. This includes the resource stack and the persistent storage container.
+/// 
 pub struct DebugText {
     dbg_fn: Box<dyn Fn(RenderDataDebug) -> String>,
 }
 
 impl DebugText {
+    ///
+    /// construct a new empty DebugText element.
     pub fn new(_: ()) -> Self {
         Self {
             dbg_fn: Box::new(|_| String::default()),
         }
     }
+
+    ///
+    /// Used internally. Set the introspection function.
     pub fn with_capture_callback(
         mut self,
         callback: impl Fn(RenderDataDebug) -> String + 'static,

@@ -23,9 +23,6 @@ pub struct CreatePollView {
                 Text("Create new poll")
                     .title()
                 Spacer()
-
-                // DebugText() |r_data| {format!("{:#?}",Rc::as_ptr(&(r_data as RenderDataDebug).persistent_storage.cell))}
-                // DebugText() |_r_data| {format!("{:#?}",std::time::SystemTime::now())}
             }
             HStack {
                 spacing:Some(10.0),
@@ -49,7 +46,6 @@ pub struct CreatePollView {
                     let fields = field_names.get().iter().map(|(_,a)|a.clone()).collect();
                     let identity = polls.get().next_identity();
                     polls.get_mut().push(Poll { identifier: identity, name, fields });
-                    // on_create_poll(name,fields);
                 }
                 Spacer()
             }
