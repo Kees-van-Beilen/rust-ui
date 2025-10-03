@@ -111,7 +111,6 @@ impl PersistentStorage {
             .collect();
         for identity in removals.iter() {
             let entry = self.garbage_collection.remove(identity).unwrap();
-            println!("|--> ran destructor");
             (entry.remove_fn)();
         }
     }
