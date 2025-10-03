@@ -5,17 +5,52 @@
     <img  alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="https://inpolen.nl/profiles/rust-ui/public/assets/logo-light.svg">
     </picture>
 </p>
+
+
+<center>
+
+[Documentation](https://rust-ui.inpolen.nl/doc/) • [The `rust-ui` Book](https://rust-ui.inpolen.nl/book/) 
+
+</center>
+
 A truly native mobile focused UI-framework for iOS and android. Many current ui-frameworks in Rust do nothing more than rendering to a window's graphics context (like what games do). Instead Rust-ui uses the native ui-system of the current platform. This allows niche integrations, better accessibility support, interoperability with native ui components (like a tab/side bar) and much more!
 
----
+<!-- <p>
+<img align="left" height="20px" src="https://inpolen.nl/profiles/rust-ui/public/assets/rust-ui-dls.svg">
+&nbsp; Domain Specific UI macro-language. This macro-language is used in rust-ui's powerful `view!` macro. It allows you to build views with ease and make them intractable with minimal effort. [Learn more about writing views in rust-ui]()
+</p> -->
 
-# Features
-## Platforms
+# Getting started
+In this section we'll walk you through everything you have to do to add `rust-ui` to your project. We assume you already have `rustup` installed.
+## Using nightly rust
+Whilst it is not required to use nightly rust, it is highly recommended as it allows you to use the powerful Rust-ui macro system.
+Install the nightly toolchain, if you haven't done so already.
+```sh
+rustup toolchain install nightly
+```
+You may make the nightly toolchain your default toolchain using `rustup default nightly` or by adding a [`rust-toolchain.toml`](https://rust-lang.github.io/rustup/overrides.html) file to your project.
+## Adding `rust-ui`
+Currently `rust-ui` isn't available on crates.io. Add rust-ui as an dependency add this line to the dependencies of your `Cargo.toml`
+```sh
+rust-ui = {git = "https://github.com/Kees-van-Beilen/rust-ui.git"}
+```
+## Hello world
+Now copy the hello world example including the `#![feature(more_qualified_paths,default_field_values)]` part at top.
+If you are on macOS you may now run `cargo +nightly run` to build and run your project. For other platforms follow the build instructions in the [Building section](#building).
+
+
+
+# Building
+
+## Supported Platforms
 | | iOS | macOS | android |
 |-|-----|-------|---------|
 |build|✅|✅|:construction:|
 |target|aarch64-apple-ios <br> aarch64-apple-ios-sim <br>x86_64-apple-ios | x86_64-apple-darwin <br> aarch64-apple-darwin | t.b.d.
-## 
+
+
+
+
 
 <details>
 <table>
@@ -27,19 +62,19 @@ A truly native mobile focused UI-framework for iOS and android. Many current ui-
 </summary>
 </details>
 
-
+<!-- 
 # Getting started
 Create a new rust project using `cargo init` (or your preferred initialization method). Next add the rust-ui package `cargo add kz-rust-ui`, and then copy the hello world example to the `main.rs` file. Your project is ready, now you can build an run. Enjoy!
 > [!IMPORTANT]
 > Due to the volatile stage the package is currently in, with features being added changed or completely removed on the fly, this crate is currently unavailable on crates.io. To use rust-ui in your project please include the following in your Cargo.toml:
 > ```toml
 > rust-ui = {git = "https://github.com/Kees-van-Beilen/rust-ui.git"}
-> ```
+> ``` -->
 <!-- > The package is called `kz-rust-ui` for the time being (this will change in the future). **However within Rust it is named `rust-ui`**. That means that in your cargo.toml you'll see a line like `kz-rust-ui = "0.1"` but in your rust code you have something along the lines of `use rust-ui::prelude::*;` 
 ## building / crosscompilation
 Depending on platform the build process might look different. In all cases a simple `cargo run` will work if your targeting your own device. -->
 
-### macOS
+## macOS
 A basic macos executable can be obtained using `cargo build`. You may also specify a target architecture.
 <table>
 <tr><td> `--target x86_64-apple-darwin` </td><td>binary for intel macs</td></tr>
@@ -49,7 +84,7 @@ A basic macos executable can be obtained using `cargo build`. You may also speci
 You may also bundle the application using [cargo-bundle](https://crates.io/crates/cargo-bundle) and then code sign using [apple-codesign](https://gregoryszorc.com/docs/apple-codesign/0.17.0/apple_codesign.html) If done properly the application should be AppStore ready. _Building, bundling and signing does not require apple hardware_
 
 
-### iOS
+## iOS
 The easiest way to test a iOS build is to try building for the iOS simulator. iOS simulator has less requirements and doesn't check code signing. For iOS you have the following targets:
 
 <table>
@@ -71,12 +106,12 @@ Building and then running on a iPhone can be done from any device. Currently it 
 ```bash
 cargo bundle --target aarch64-apple-ios
 ```
-Next upp is code-signing, but first all apps running on device are required to be signed. (Self signing should work but that still has to be figured out). Furthermore your also required to ship a `.mobileprovision` certificate in the app bundle. This can be done by downloading the appropriate certificate from the apple developer website, and then adding `resources = ["embedded.mobileprovision"]` to the `package.metadata.bundle` section in your Cargo.toml. 
+Next up is code-signing, all apps running on device are required to be signed. (Self signing should work but that still has to be figured out). Furthermore your also required to ship a `.mobileprovision` certificate in the app bundle. This can be done by downloading the appropriate certificate from the apple developer website, and then adding `resources = ["embedded.mobileprovision"]` to the `package.metadata.bundle` section in your Cargo.toml. 
 
 To codesign use the [apple-codesign](https://gregoryszorc.com/docs/apple-codesign/0.17.0/apple_codesign.html) utility. This utility program can be ran on all platforms. Please follow the instructions on there website on how to codesign a bundle as depending on your certificates the proccess might look different.
 
 
-Next to deploy on device, you may any `ipa/app` installer. Commonly used is XCode (which can properly handle wireless installs) To install using XCode press ⇧⌘2 (shift+cmd+2) in XCode, this brings up th devices menu. Select your device and drag your `.app` bundle to app list. 
+Next to deploy on device, you may use any `ipa/app` installer. Commonly used is XCode (which can properly handle wireless installs) To install using XCode press ⇧⌘2 (shift+cmd+2) in XCode, this brings up th devices menu. Select your device and drag your `.app` bundle to app list. 
 
 You may also use [libimobiledevice](https://libimobiledevice.org/) to install the application on your device. Simply run
 ```bash
@@ -109,159 +144,6 @@ If you're unable to boot the development disk on your target device, or if you'r
 7. Drag the file into XCode and make sure it is copied to the final application bundle
 8. Success, it might though not work on every build but every second build, in that case just build twice.
 
-
-
-
-
-
-# Examples
-These examples are currently not buildable, as the macro system is currently under development. Look at the `examples/no_macros` directory  for examples that don't use the macro system. These examples (prefixed by `wm_`) can be bundled and ran using:
-```sh
-cargo bundle --target aarch64-apple-ios-sim --example wm_hello_world
-xcrun simctl install booted "<path output by the bundle command>"
-```
-## Hello World
-One of the first programs you'll write in rust-ui, perfect for testing if everything worked. 
-```rs
-//main.rs
-use rust_ui::prelude::*;
-
-// thanks to the #[ui(main)] macro we dont
-// have to include a main function.
-#[ui(main)]
-struct MainView {
-    // define the body of this view
-    body = {
-        Text("Hello world")
-    }
-}
-```
-
-## Counter
-This example demonstrates how state and view redrawing works.
-```rs
-//main.rs
-use rust_ui::prelude::*;
-
-#[ui(main)]
-struct MainView {
-    // We use #[state] to indicate that a
-    // change in  this  variables  should
-    // redraw our view.
-    #[state] count: i32 = 0,
-    body = {
-        HStack {
-            spacing: 8.0,
-            Text(format!("You have clicked {count} times")),
-            
-            Button("Click me") || {
-                printf!("clicked");
-                count += 1;
-            }
-        }
-    }
-}
-```
-## Bindings
-This example illustrates how to split up views, and pass bindings.
-```rs 
-//main.rs
-use rust_ui::prelude::*;
-
-#[ui]
-struct IncrementorButton {
-    // Bindings indicate that  if  this  value
-    // changes, the owner of this value should
-    // rerender its view.
-    #[binding] value: i32,
-    body = {
-        Button("click me") || {
-            value += 1;
-        }
-    }
-}
-
-#[ui(main)]
-struct MainView {
-    #[state] count: i32 = 0,
-    body = {
-        HStack {
-            spacing: 8.0,
-            Text(format!("You have clicked {count} times")),
-            
-            IncrementorButton {
-                //we create a binding to our 
-                //count variable
-                value:binding!(count)
-            }
-        }
-    }
-}
-```
-## Hide/show
-```rs 
-//main.rs
-use rust_ui::prelude::*;
-
-#[ui(main)]
-struct MainView {
-    #[state] hidden: bool = true,
-    body = {
-        HStack {
-            spacing: 8.0,
-            if !hidden {
-                Text("My secret text")
-            }
-            Button(if hidden {"show"}else{"hide"}) || {
-                hidden = !hidden;
-            }
-        }
-    }
-}
-```
-## Lists
-```rs 
-//main.rs
-use rust_ui::prelude::*;
-
-#[ui(main)]
-struct MainView {
-
-    #[state] items: Vec<String> = vec![],
-    #[state] text_input: String = String::new(),
-
-    body = {
-        VStack {
-            spacing: 8.0,
-            HStack {
-                Input(binding!(text_input)),
-                Button("add item") || {
-                    items.push(text_input);
-                    text_input.clear();
-                }
-                for item in items.iter() {
-                    Text(item)
-                }
-            }
-            
-        }
-    }
-}
-```
-
-
-# The necessary evil
-First why the weird macro syntax? This is done to abstract away some very verbose syntax. Besides that it is also there to make sure people don't shoot themselves in the foot. For instance the `body = {...}`, which compiles down to a function, makes sure you only do UI related initialization (you still can do some funky stuff but it is a lot harder now). 
-
-You may also notice that fields marked with `#[state]` almost always have a default initializer. Instead of of rust builtin default trait rust-ui
-
-Next why no main function? In this library you should have one view in the `main.rs` file with the tag `#[ui(main)]` as opposed to just the `#[ui]` tag. This automatically adds a main function that looks similar to this:
-```rs
-fn main(){
-    rust_ui::native::launch_application_with_view(MyMainView::new())
-}
-```
-So why not write this function yourself? You can, but again you might shoot yourself in the foot. The main function should initialize the application and register it to the os as fast as possible, doing any form of initialization is strongly discouraged, instead use a `.task {}` hook. Also your application might want to support more than just a main view. Think of a preview provider or home-screen widget. Whilst these aren't supported by the current project, these would be implement using `#[ui(widget)]` or similar
 
 
 ---

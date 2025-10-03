@@ -1,4 +1,10 @@
-use rust_ui::{modifiers::{font::FontResourceModifier, frame::{Frame, FrameModifier}}, prelude::*};
+use rust_ui::{
+    modifiers::{
+        font::FontResourceModifier,
+        frame::{Frame, FrameModifier},
+    },
+    prelude::*,
+};
 
 fn main() {
     rust_ui::native::launch_application_with_view(VStack {

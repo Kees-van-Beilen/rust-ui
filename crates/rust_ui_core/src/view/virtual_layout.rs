@@ -59,10 +59,9 @@ pub trait VirtualLayoutManager<T>: Default {
     fn inspect_child(&mut self, _child: ChildRef, _with_frame: &Frame, _view: &T) {}
 }
 
-fn set_child_layout() {}
 // if possible this should not be a macro but an auto implement
 
-pub fn inspect_recurse<Data,Manager:VirtualLayoutManager<Data>>(
+pub fn inspect_recurse<Data, Manager: VirtualLayoutManager<Data>>(
     manager: &mut Manager,
     index: &mut usize,
     frame: &Frame,
@@ -88,8 +87,7 @@ pub fn inspect_recurse<Data,Manager:VirtualLayoutManager<Data>>(
     }
 }
 
-
-pub fn set_layout_recurse<Data,Manager:VirtualLayoutManager<Data>>(
+pub fn set_layout_recurse<Data, Manager: VirtualLayoutManager<Data>>(
     manager: &mut Manager,
     index: &mut usize,
     frame: &Frame,

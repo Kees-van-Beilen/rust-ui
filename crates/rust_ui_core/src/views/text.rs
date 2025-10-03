@@ -1,10 +1,19 @@
 use std::rc::Rc;
 
-use crate::{impl_resource, view::resources::Resource};
+use crate::{
+    impl_resource,
+    layout::RenderObject,
+    view::{
+        persistent_storage::PersistentStorageRef,
+        resources::{Resource, ResourceStack},
+    },
+};
 
 /// Supports font weights 100-900, not every system treats font weights the same
-/// thats why this is an enum instead of a number
-#[derive(Clone, Copy, Debug, Default)]
+/// thats why this is an enum instead of a number.
+/// 
+/// In the future this enum will change to a struct (to accommodate variable weights)
+#[derive(Clone, Copy, Debug, Default,PartialEq)]
 pub enum FontWeight {
     Ultralight,
     Thin,
@@ -18,7 +27,8 @@ pub enum FontWeight {
     Black,
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+/// The alignment of text elements
+#[derive(Clone, Copy, Debug, Default,PartialEq,Eq)]
 pub enum TextAlignment {
     /// In most cases this means to the left
     Leading,
@@ -29,7 +39,8 @@ pub enum TextAlignment {
     Trailing,
 }
 
-#[derive(Default, Clone, Debug)]
+/// The font family to use for text elements.
+#[derive(Default, Clone, Debug,PartialEq)]
 pub enum FontFamily {
     /// Use the default system bundled font.
     /// (This may not be the same as the default system font)
@@ -38,13 +49,19 @@ pub enum FontFamily {
     /// Reference a custom font family by name
     /// This does require the font to be available as a system font
     /// or be properly bundled with the application.
-    /// 
+    ///
     /// This currently does nothing, as custom fonts aren't yet implemented
+    #[doc(hidden)]
     Custom(Rc<str>),
 }
 
-#[derive(Clone, Copy, Debug)]
+/// The font size to use for text elements.
+#[derive(Clone, Copy, Debug,PartialEq)]
 pub struct FontSize(pub f64);
+
+/// The color of elements that can be tinted.
+#[derive(Clone,Copy,PartialEq)]
+pub struct TintColor(bevy_color::Color);
 
 impl_resource!(FontSize);
 impl_resource!(FontWeight);
@@ -116,10 +133,57 @@ pub struct Text {
 impl Text {
     ///
     /// Create a new Text view using the specified string.
-    /// 
+    ///
     pub fn new(str: impl ToString) -> Text {
         Text {
             content: str.to_string(),
         }
+    }
+}
+
+
+#[derive(Debug)]
+pub struct RenderDataDebug<'a> {
+    pub stack: ResourceStack<'a>,
+    pub persistent_storage: PersistentStorageRef,
+}
+///
+/// Debug text allows you to introspect the current render data. This includes the resource stack and the persistent storage container.
+/// 
+pub struct DebugText {
+    dbg_fn: Box<dyn Fn(RenderDataDebug) -> String>,
+}
+
+impl DebugText {
+    ///
+    /// construct a new empty DebugText element.
+    pub fn new(_: ()) -> Self {
+        Self {
+            dbg_fn: Box::new(|_| String::default()),
+        }
+    }
+
+    ///
+    /// Used internally. Set the introspection function.
+    pub fn with_capture_callback(
+        mut self,
+        callback: impl Fn(RenderDataDebug) -> String + 'static,
+        _identity: usize,
+    ) -> Self {
+        self.dbg_fn = Box::new(callback);
+        self
+    }
+}
+
+
+impl RenderObject for DebugText {
+    type Output = <Text as RenderObject>::Output;
+
+    fn render(&self, data: crate::native::RenderData) -> Self::Output {
+        let out = (self.dbg_fn)(RenderDataDebug {
+            stack: data.stack.clone(),
+            persistent_storage: data.persistent_storage.clone(),
+        });
+        Text::new(out).render(data)
     }
 }

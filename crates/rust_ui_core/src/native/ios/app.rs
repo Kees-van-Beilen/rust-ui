@@ -1,10 +1,10 @@
-
 use crate::layout::{ComputableLayout, Position, RenderObject, Size};
 use objc2::rc::Retained;
 use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send};
-use objc2_foundation::{MainThreadMarker, NSObject, NSObjectProtocol,NSSize};
+use objc2_foundation::{MainThreadMarker, NSObject, NSObjectProtocol, NSSize};
 use objc2_ui_kit::{
-    UIApplication, UIApplicationDelegate, UIApplicationLaunchOptionsKey, UIContentContainer, UIViewController, UIViewControllerTransitionCoordinator, UIWindow
+    UIApplication, UIApplicationDelegate, UIApplicationLaunchOptionsKey, UIContentContainer,
+    UIViewController, UIViewControllerTransitionCoordinator, UIWindow,
 };
 use std::cell::{Cell, OnceCell, RefCell};
 //These are globals meant for the main thread only. We do this because we are not the one
@@ -45,6 +45,11 @@ define_class!(
         fn objc_resize(&self,to:NSSize) {
             self.resize_to(to);
         }
+
+        #[unsafe(method(bridge_window))]
+        fn bridge_window(&self) -> &UIWindow {
+            &self.ivars().window.get().unwrap()
+        }
     }
 
 
@@ -72,6 +77,7 @@ define_class!(
 // use objc2::ffi::id
 #[derive(Default)]
 pub struct RustViewControllerIVars {
+    pub on_disappear: OnceCell<Box<dyn Fn()>>,
 }
 
 define_class!(
@@ -92,8 +98,16 @@ define_class!(
             let s = this.set_ivars(RustViewControllerIVars::default());
             unsafe { msg_send![super(s), init] }
         }
-       
+        #[unsafe(method(viewDidDisappear:))]
+        fn did_disappear(&self,animated:bool){
+            let Some(func) = self.ivars().on_disappear.get() else {return};
+            func()
+        }
+
+
+
     }
+
 
     // SAFETY: `NSApplicationDelegate` has no safety requirements.
     unsafe impl UIContentContainer for RustViewController {
@@ -107,12 +121,12 @@ define_class!(
 
 );
 impl RustViewController {
-    pub fn resize(&self,to:NSSize){
+    pub fn resize(&self, to: NSSize) {
         let mtm = MainThreadMarker::new().unwrap();
         let shared = UIApplication::sharedApplication(mtm);
-        unsafe { 
+        unsafe {
             let del = shared.delegate().unwrap();
-            let _:() = msg_send![&del, resize:to];
+            let _: () = msg_send![&del, resize:to];
         }
     }
 }
@@ -121,9 +135,8 @@ pub unsafe fn create_window(mtm: MainThreadMarker) -> Retained<UIWindow> {
     let window = unsafe { UIWindow::init(UIWindow::alloc(mtm)) };
     // window.resize
     let mtm = MainThreadMarker::new().unwrap();
-    let controller:Retained<RustViewController> = msg_send!(RustViewController::alloc(mtm), init);
-    unsafe { window.setRootViewController(Some(&controller)) };
-
+    let controller: Retained<RustViewController> = msg_send!(RustViewController::alloc(mtm), init);
+    window.setRootViewController(Some(&controller));
     return window;
 }
 impl Delegate {
@@ -135,10 +148,13 @@ impl Delegate {
         let window = self.ivars().window.get().unwrap();
         let view = window.rootViewController().unwrap().view().unwrap();
         let stack = crate::view::resources::ResourceStack::Owned(Default::default());
-        let root: Box<dyn ComputableLayout> =
-            Box::new(object.render(super::native::RenderData { real_parent: view, stack }));
+        let persistent_storage = Default::default();
+        let root: Box<dyn ComputableLayout> = Box::new(object.render(super::native::RenderData {
+            real_parent: view,
+            stack,
+            persistent_storage,
+        }));
         let _ = ROOT_VIEW.with(|v| v.replace(Some(root)));
-
     }
     //Mainthread only
     pub fn resize(&self) {
@@ -154,7 +170,7 @@ impl Delegate {
         });
     }
     //Mainthread only
-    pub fn resize_to(&self,to:NSSize) {
+    pub fn resize_to(&self, to: NSSize) {
         // let window = self.ivars().window.get().unwrap();
         // let view = window.rootViewController().unwrap().view().unwrap();
         // let frame = view.frame();

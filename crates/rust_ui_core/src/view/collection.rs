@@ -1,4 +1,3 @@
-
 use crate::layout::{ComputableLayout, RenderObject};
 use tuplex::IntoArray;
 
@@ -10,9 +9,8 @@ pub trait LayoutCollection {
     /// Get a reference to the [ComputableLayout]s in this collection
     fn with_v_tables_ref(&self, f: impl FnOnce(&[&dyn ComputableLayout]));
 
-
-    fn write_v_tables<'a,'b>(&'a self,buf:&'b mut Vec<&'a dyn ComputableLayout>);
-    fn write_v_tables_mut<'a,'b>(&'a mut self,buf:&'b mut Vec<&'a mut dyn ComputableLayout>);
+    fn write_v_tables<'a, 'b>(&'a self, buf: &'b mut Vec<&'a dyn ComputableLayout>);
+    fn write_v_tables_mut<'a, 'b>(&'a mut self, buf: &'b mut Vec<&'a mut dyn ComputableLayout>);
 }
 /// A view collection, represents a group of objects that can be "rendered" into a [`LayoutCollection`]
 /// View collections are automatically implemented for tuples (with up to 16 elements) whose types implement [`RenderObject`]
@@ -50,9 +48,6 @@ macro_rules! impl_collection {
         }
     };
 }
-
-
-
 
 impl_collection!(A 0);
 impl_collection!(A 0, B 1);

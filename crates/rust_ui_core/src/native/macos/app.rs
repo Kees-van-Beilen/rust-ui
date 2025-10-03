@@ -15,6 +15,7 @@ use objc2_foundation::{
 };
 
 use crate::layout::{ComputableLayout, Position, RenderObject, Size};
+use crate::view::persistent_storage::PersistentStorageRef;
 use crate::view::resources::Resources;
 
 #[derive(Default)]
@@ -27,6 +28,8 @@ pub struct AppDelegateIvars {
     //the signal get called when the application reaches the ready state
     //this could be cleaner tbh.
     pub signal: Cell<Option<Box<dyn FnOnce(&Delegate)>>>,
+
+    pub storage: PersistentStorageRef,
 }
 
 define_class!(
@@ -73,7 +76,7 @@ define_class!(
             unsafe { window.setReleasedWhenClosed(false) };
 
             // Set various window properties.
-            window.setTitle(ns_string!("A window"));
+            window.setTitle(ns_string!("rust-ui app"));
 
             window.center();
             // unsafe { window.setContentMinSize(NSSize::new(300.0, 300.0)) };
@@ -131,6 +134,7 @@ impl Delegate {
         let root_res = Resources::default();
         let root: Box<dyn ComputableLayout> = Box::new(object.render(super::native::RenderData {
             real_parent: view,
+            persistent_storage: self.ivars().storage.clone(),
             stack: crate::view::resources::ResourceStack::Owned(root_res),
         }));
         self.ivars().root.replace(Some(root));

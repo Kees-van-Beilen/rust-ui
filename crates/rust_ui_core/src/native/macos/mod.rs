@@ -2,17 +2,19 @@
 
 mod app;
 mod button;
-mod image;
 mod click_view;
+mod image;
 mod scrollview;
+mod sheet;
+mod text_field;
 
 use crate::layout::ComputableLayout;
 use objc2_app_kit::NSView;
-use objc2_foundation::{NSPoint, NSSize};
+use objc2_foundation::NSPoint;
 
 //all nsview reps auto participate in the layout manager
 //todo: this file should be split up
-pub (crate)  trait NSViewRepresentable {
+pub(crate) trait NSViewRepresentable {
     fn ns_view(&self) -> &NSView;
 }
 impl<T: NSViewRepresentable> ComputableLayout for T {
@@ -23,7 +25,13 @@ impl<T: NSViewRepresentable> ComputableLayout for T {
 
     fn set_position(&mut self, to: crate::layout::Position<f64>) {
         let view = self.ns_view();
-        let y = unsafe { view.superview() }.unwrap().frame().size.height
+        let y = unsafe { view.superview() }
+            .expect(
+                "this view does not have a parent (impossible! there is something seriously wrong)",
+            )
+            .frame()
+            .size
+            .height
             - to.y
             - view.frame().size.height;
 
@@ -35,8 +43,12 @@ impl<T: NSViewRepresentable> ComputableLayout for T {
         unsafe { view.removeFromSuperview() };
     }
 }
-pub (crate) fn nsview_setposition(view:&NSView,to:crate::layout::Position<f64>){
-    let y = unsafe { view.superview() }.unwrap().frame().size.height
+pub(crate) fn nsview_setposition(view: &NSView, to: crate::layout::Position<f64>) {
+    let y = unsafe { view.superview() }
+        .expect("this view does not have a parent (impossible! there is something seriously wrong)")
+        .frame()
+        .size
+        .height
         - to.y
         - view.frame().size.height;
 
@@ -48,17 +60,17 @@ pub mod native {
 
     pub use super::image::*;
 
-    use std::{borrow::Cow, cell::RefCell, rc::Rc};
+    use std::{cell::RefCell, rc::Rc};
 
     //views
     use objc2::{DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
     use objc2_app_kit::{
-        NSApplication, NSApplicationActivationPolicy, NSBezelStyle, NSFontWeight,
-        NSFontWeightBlack, NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight,
-        NSFontWeightMedium, NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin,
-        NSFontWeightUltraLight, NSTextAlignment, NSTextField, NSView,
+        NSApplication, NSApplicationActivationPolicy, NSFontWeight, NSFontWeightBlack,
+        NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight, NSFontWeightMedium,
+        NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin, NSFontWeightUltraLight,
+        NSTextAlignment, NSTextField, NSView,
     };
-    use objc2_core_graphics::CGColorCreateSRGB;
+    use objc2_core_graphics::CGColor;
     use objc2_foundation::{NSPoint, NSString};
     use objc2_quartz_core::CALayer;
 
@@ -66,7 +78,8 @@ pub mod native {
         layout::{self, ComputableLayout, Position, RenderObject, Size},
         view::{
             mutable::MutableViewRerender,
-            resources::{Resource, ResourceStack},
+            persistent_storage::PersistentStorageRef,
+            resources::{Resource, ResourceStack, Resources},
         },
         views::{FontFamily, FontSize, FontWeight, TextAlignment},
     };
@@ -75,111 +88,162 @@ pub mod native {
 
     pub struct MutableView {
         children: Box<dyn ComputableLayout>,
-        parent: Retained<NSView>,
+        parent: Option<Retained<NSView>>,
         layout_size: layout::Size<f64>,
+        layout_position: layout::Position<f64>,
         stack: crate::view::resources::Resources,
-        enqueue_rerender: bool
+        persistent_storage: PersistentStorageRef,
     }
-    impl<T: crate::view::mutable::MutableView> MutableViewRerender for Rc<RefCell<T>> {
+    impl<T: crate::view::mutable::MutableView + 'static> MutableViewRerender for Rc<RefCell<T>> {
         fn rerender(&self) {
             //This entire rerender logic is a piece of shit
             //the entire idea of these mutable views have to
             //be redesigned.
+
             let mut data = self.borrow_mut();
-            if let Some(k) = &mut data.get_mut_attached() {
+            if let Some(k) = &mut data.get_mut_attached()
+                && k.borrow().parent.is_some()
+            {
                 let render_data = {
                     let mut b = k.borrow_mut();
                     b.children.destroy();
                     let render_data = RenderData {
-                        real_parent: b.parent.clone(),
+                        real_parent: b.parent.clone().unwrap(),
+
+                        // persistent_storage:
                         //TODO: fix this clone to a ref
                         stack: crate::view::resources::ResourceStack::Owned(b.stack.clone()),
+                        persistent_storage: b.persistent_storage.clone(),
                     };
                     render_data
                 };
                 drop(data);
                 let _ = self.render(render_data);
+            } else {
+                drop(data);
             }
         }
-        
-        fn enqueue_change(&self) {
-            // self.borrow_mut().set_changed();
-        }
-        
-        fn flush_changes(&self) {
-            if self.borrow_mut().read_changed() {
-                self.rerender();
-            }
-        }
-        
     }
-    impl<T: crate::view::mutable::MutableView> RenderObject for Rc<RefCell<T>> {
+    impl<T: crate::view::mutable::MutableView + 'static> RenderObject for Rc<RefCell<T>> {
         type Output = Rc<RefCell<crate::native::MutableView>>;
 
         fn render(&self, data: crate::native::RenderData) -> Self::Output {
-            let r = T::children(self.clone()).render(data.clone());
+            type Store<T> = (Resources, PersistentStorageRef, Rc<RefCell<T>>);
+            let identity = self.borrow().get_identity();
+            let mut borrow = data.persistent_storage.borrow_mut();
+            let mut resume_storage = true;
+            // let mut did_swap = false;
+            // let mut did_try_swap = false;
+            let (res, storage, self_container) =
+                borrow.get_or_init_with::<Store<T>>(identity, || {
+                    resume_storage = false;
+                    (
+                        data.stack.as_ref().clone(),
+                        PersistentStorageRef::default(),
+                        self.clone(),
+                    )
+                });
+
+            //we need to copy the state from the last
+            if !Rc::ptr_eq(self, self_container) {
+                // this code will execute iff the something else is rerendering this view in the same
+                // frame that this view's state is updated.
+                // this happens when a view updates a binding and a state variable at the same time
+                self_container
+                    .borrow()
+                    .clone_bindings(&mut self.borrow_mut());
+            }
+
+            let new_data = RenderData {
+                real_parent: data.real_parent,
+                stack: ResourceStack::Owned(res.clone()),
+                persistent_storage: storage.clone(),
+            };
+            drop(borrow);
+
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_unset_all();
+            let r = T::children(self.clone()).render(new_data.clone());
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_cycle();
+
             let view = Rc::new(RefCell::new(MutableView {
                 children: Box::new(r),
                 layout_size: layout::Size {
                     width: 0.0,
                     height: 0.0,
                 },
-                parent: data.real_parent,
-                stack: data.stack.as_ref().clone(),
-                enqueue_rerender:false
+
+                parent: Some(new_data.real_parent),
+                stack: match new_data.stack {
+                    ResourceStack::Owned(resources) => resources,
+                    ResourceStack::Borrow(resources) => resources.clone(),
+                },
+                persistent_storage: data.persistent_storage,
+                layout_position: layout::Position::default(),
             }));
+
             let mut m = self.borrow_mut();
             let mut attached = m.get_mut_attached();
             if let Some(k) = &mut attached {
                 k.swap(&view);
                 k.set_size(view.borrow().layout_size);
-                k.set_position(Position { x: 0.0, y: 0.0 });
+                k.set_position(view.borrow().layout_position);
             } else {
                 *attached = Some(view.clone());
             }
-            view
+
+            m.get_attached().clone().unwrap()
+        }
+
+        fn set_identity(self, identity: usize) -> Self {
+            self.borrow_mut().set_identity(identity);
+            self
         }
     }
-    
-   
 
     impl ComputableLayout for Rc<RefCell<MutableView>> {
-        
         fn set_size(&mut self, to: layout::Size<f64>) {
             self.borrow_mut().layout_size = to;
             self.borrow_mut().children.set_size(to);
         }
 
         fn set_position(&mut self, to: layout::Position<f64>) {
+            self.borrow_mut().layout_position = to;
             self.borrow_mut().children.set_position(to);
         }
 
         fn destroy(&mut self) {
             self.borrow_mut().children.destroy();
+            self.borrow_mut().parent = None;
         }
-        
+
         fn v_tables_mut(&mut self) -> &mut [&mut dyn ComputableLayout] {
             //the default is to not do so, as most layouts do not contain dynamic
             &mut []
         }
-        
+
         fn v_tables(&self) -> &[&dyn ComputableLayout] {
             //the default is to not do so, as most layouts do not contain dynamic
             &[]
         }
-        
+
         fn v_tables_len(&self) -> usize {
             0
         }
-        
+
         fn preferred_size(&self, in_frame: &Size<f64>) -> Size<Option<f64>> {
             self.borrow().children.preferred_size(in_frame)
         }
-        
+
         fn min_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
             Size::splat(None)
         }
-        
+
         fn max_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
             Size::splat(None)
         }
@@ -303,7 +367,6 @@ pub mod native {
 
             let y = (self.size.height - size.height) * 0.5 + self.position.y;
             let x = (to.width - size.width) * 0.5 + self.position.x;
-            // println!("real y {y}");
             let y = unsafe { self.nsview.superview() }
                 .unwrap()
                 .frame()
@@ -311,7 +374,6 @@ pub mod native {
                 .height
                 - y
                 - size.height;
-            // println!("real y {y}");
             unsafe { self.nsview.setFrameOrigin(NSPoint { x, y }) };
         }
     }
@@ -386,7 +448,7 @@ pub mod native {
             let view = unsafe {
                 let view = NSView::new(mtm);
                 let color =
-                    CGColorCreateSRGB(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
+                    CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
                 let layer = CALayer::layer();
                 layer.setBackgroundColor(Some(&color));
                 view.setLayer(Some(&layer));
@@ -405,7 +467,10 @@ pub mod native {
     pub struct RenderData<'a> {
         pub real_parent: Retained<NSView>,
         pub stack: crate::view::resources::ResourceStack<'a>,
+        /// a reference to the parents persistent_storage
+        pub persistent_storage: PersistentStorageRef,
     }
+
     impl<'a> RenderData<'a> {
         pub fn ament_with<T: Resource, F, K>(&mut self, element: T, with_fn: F) -> K
         where
@@ -415,6 +480,7 @@ pub mod native {
                 let d = RenderData {
                     real_parent: self.real_parent.clone(),
                     stack: ResourceStack::Borrow(stack_e),
+                    persistent_storage: self.persistent_storage.clone(),
                 };
 
                 with_fn(d)

@@ -1,7 +1,7 @@
-#![feature(more_qualified_paths,default_field_values)]
+#![feature(more_qualified_paths, default_field_values)]
 use rust_ui::prelude::*;
 
-const RED:Color = Color::oklch(0.6, 0.22, 16.94);
+const RED: Color = Color::oklch(0.6, 0.22, 16.94);
 
 #[ui]
 struct ImageDetailView {
@@ -14,7 +14,7 @@ struct ImageDetailView {
                 ImageScalingMode::Fill => "Fill",
             })
             ImageView("./assets/demo/cat.png")
-                .set_scaling_mode(mode)
+                .set_scaling_mode(*mode)
                 .background {
                     ColorView(Color::BLACK)
                 }

@@ -29,7 +29,7 @@ pub mod native {
     pub struct NativeImageHandle {}
 
     impl NativeImageHandle {
-        pub fn from_path(path:impl ToString)->Self {
+        pub fn from_path(path: impl ToString) -> Self {
             todo!()
         }
     }

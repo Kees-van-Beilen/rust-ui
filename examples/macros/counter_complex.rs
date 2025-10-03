@@ -1,6 +1,5 @@
-#![feature(more_qualified_paths,default_field_values)]
+#![feature(more_qualified_paths, default_field_values)]
 use rust_ui::prelude::*;
-
 
 #[ui]
 struct IncrementorButton {
@@ -11,7 +10,6 @@ struct IncrementorButton {
         }
     }
 }
-
 
 #[ui(main)]
 
@@ -29,6 +27,3 @@ struct RootView {
         }
     }
 }
-
-
-

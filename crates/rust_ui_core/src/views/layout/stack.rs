@@ -1,10 +1,6 @@
 use crate::{
     self as rust_ui,
-    layout::ComputableLayout,
-    view::{
-        collection::LayoutCollection,
-        virtual_layout::{inspect_recurse, set_layout_recurse, ChildRef, Frame},
-    },
+    view::virtual_layout::{inspect_recurse, set_layout_recurse},
 };
 use std::ops::Add;
 
@@ -21,7 +17,6 @@ virtual_layout!(HStack (HStackData,HStackPartialInit) => RenderedHStack (HStackL
 virtual_layout!(VStack (VStackData,VStackPartialInit) => RenderedVStack (VStackLayout) {
     spacing:f64
 });
-
 
 #[derive(Default, Debug)]
 pub struct HStackLayout {
@@ -56,9 +51,9 @@ impl VirtualLayoutManager<HStackData> for HStackLayout {
         with_frame: &crate::view::virtual_layout::Frame,
         data: &HStackData,
     ) {
-
+        let remaining_width = with_frame.size.width - self.current_width;
         let portion = match child.layout.preferred_size(&with_frame.size).width {
-            Some(width) => width,
+            Some(width) => width.min(remaining_width),
             None if self.unallocated_units == 0 => with_frame.size.width,
             None => {
                 (with_frame.size.width
@@ -66,7 +61,8 @@ impl VirtualLayoutManager<HStackData> for HStackLayout {
                     - data.spacing * (self.child_count as f64 - 1.0).max(0.0))
                     / self.unallocated_units as f64
             }
-        };
+        }
+        .max(0.0);
 
         child.layout.set_size(Size {
             width: portion,
@@ -115,8 +111,9 @@ impl VirtualLayoutManager<VStackData> for VStackLayout {
         with_frame: &crate::view::virtual_layout::Frame,
         data: &VStackData,
     ) {
+        let remaining_height = with_frame.size.height - self.current_height;
         let portion = match child.layout.preferred_size(&with_frame.size).height {
-            Some(height) => height,
+            Some(height) => height.min(remaining_height),
             None if self.unallocated_units == 0 => with_frame.size.height,
             None => {
                 (with_frame.size.height
@@ -124,7 +121,8 @@ impl VirtualLayoutManager<VStackData> for VStackLayout {
                     - data.spacing * (self.child_count as f64 - 1.0).max(0.0))
                     / self.unallocated_units as f64
             }
-        };
+        }
+        .max(0.0);
 
         child.layout.set_size(Size {
             width: with_frame.size.width,

@@ -1,8 +1,10 @@
 mod app;
 mod button;
-mod image;
 mod click_view;
+mod image;
 mod scroll_view;
+mod sheet;
+mod text_field;
 
 use crate::{icon::Icon, layout::ComputableLayout};
 use objc2::rc::Retained;
@@ -52,7 +54,14 @@ pub mod native {
         app::{Delegate, ON_LAUNCH_SIGNAL},
     };
     use crate::{
-        icon::Icon, layout::{self, ComputableLayout, Position, RenderObject, Size}, view::{mutable::MutableViewRerender, resources::{Resource, ResourceStack}}, views::{tabbar::RenderedTabData, FontFamily, FontSize, FontWeight, TextAlignment}
+        icon::Icon,
+        layout::{self, ComputableLayout, Position, RenderObject, Size},
+        view::{
+            mutable::MutableViewRerender,
+            persistent_storage::PersistentStorageRef,
+            resources::{Resource, ResourceStack, Resources},
+        },
+        views::{FontFamily, FontSize, FontWeight, TextAlignment, tabbar::RenderedTabData},
     };
     use block2::RcBlock;
     use objc2::{ClassType, MainThreadMarker, MainThreadOnly, rc::Retained};
@@ -62,8 +71,8 @@ pub mod native {
         NSLineBreakMode, NSTextAlignment, UIAction, UIApplication, UIButton, UIColor,
         UIControlState, UIFontWeight, UIFontWeightBlack, UIFontWeightBold, UIFontWeightHeavy,
         UIFontWeightLight, UIFontWeightMedium, UIFontWeightRegular, UIFontWeightSemibold,
-        UIFontWeightThin, UIFontWeightUltraLight, UIImage, UILabel, UITab,
-        UITabBarController, UIView, UIViewController,
+        UIFontWeightThin, UIFontWeightUltraLight, UIImage, UILabel, UITab, UITabBarController,
+        UIView, UIViewController,
     };
     use std::{cell::RefCell, ptr::NonNull, rc::Rc};
 
@@ -72,34 +81,32 @@ pub mod native {
         parent: Retained<UIView>,
         layout_size: layout::Size<f64>,
         stack: crate::view::resources::Resources,
-
+        persistent_storage: PersistentStorageRef,
+        layout_position: Position<f64>,
     }
 
-    impl<T: crate::view::mutable::MutableView> MutableViewRerender for Rc<RefCell<T>> {
-        
+    impl<T: crate::view::mutable::MutableView + 'static> MutableViewRerender for Rc<RefCell<T>> {
         fn rerender(&self) {
             let mut data = self.borrow_mut();
             if let Some(k) = &mut data.get_mut_attached() {
                 let render_data = {
                     let mut b = k.borrow_mut();
                     b.children.destroy();
-                    RenderData {
+                    let render_data = RenderData {
                         real_parent: b.parent.clone(),
+
+                        // persistent_storage:
                         //TODO: fix this clone to a ref
                         stack: crate::view::resources::ResourceStack::Owned(b.stack.clone()),
-                    }
+                        persistent_storage: b.persistent_storage.clone(),
+                    };
+                    render_data
                 };
                 drop(data);
                 let _ = self.render(render_data);
+            } else {
+                drop(data);
             }
-        }
-        
-        fn enqueue_change(&self) {
-            todo!()
-        }
-        
-        fn flush_changes(&self) {
-            todo!()
         }
     }
 
@@ -119,31 +126,106 @@ pub mod native {
         }
     }
 
-    impl<T: crate::view::mutable::MutableView> RenderObject for Rc<RefCell<T>> {
+    impl<T: crate::view::mutable::MutableView + 'static> RenderObject for Rc<RefCell<T>> {
         type Output = Rc<RefCell<crate::native::MutableView>>;
 
         fn render(&self, data: crate::native::RenderData) -> Self::Output {
-            let r = T::children(self.clone()).render(data.clone());
+            // let r = T::children(self.clone()).render(data.clone());
+            // let view = Rc::new(RefCell::new(MutableView {
+            //     children: Box::new(r),
+            //     layout_size: layout::Size {
+            //         width: 0.0,
+            //         height: 0.0,
+            //     },
+            //     parent: data.real_parent,
+            //     stack: data.stack.as_ref().clone(),
+
+            // }));
+            // let mut m = self.borrow_mut();
+            // let mut attached = m.get_mut_attached();
+            // if let Some(k) = &mut attached {
+            //     k.swap(&view);
+            //     k.set_size(view.borrow().layout_size);
+            //     k.set_position(Position { x: 0.0, y: 0.0 });
+            // } else {
+            //     *attached = Some(view.clone());
+            // }
+            // view
+
+            type Store<T> = (Resources, PersistentStorageRef, Rc<RefCell<T>>);
+            let identity = self.borrow().get_identity();
+            let mut borrow = data.persistent_storage.borrow_mut();
+            let mut resume_storage = true;
+            // let mut did_swap = false;
+            // let mut did_try_swap = false;
+            let (res, storage, self_container) =
+                borrow.get_or_init_with::<Store<T>>(identity, || {
+                    resume_storage = false;
+                    (
+                        data.stack.as_ref().clone(),
+                        PersistentStorageRef::default(),
+                        self.clone(),
+                    )
+                });
+
+            //we need to copy the state from the last
+            if !Rc::ptr_eq(self, self_container) {
+                // this code will execute iff the something else is rerendering this view in the same
+                // frame that this view's state is updated.
+                // this happens when a view updates a binding and a state variable at the same time
+                self_container
+                    .borrow()
+                    .clone_bindings(&mut self.borrow_mut());
+            }
+
+            let new_data = RenderData {
+                real_parent: data.real_parent,
+                stack: ResourceStack::Owned(res.clone()),
+                persistent_storage: storage.clone(),
+            };
+            drop(borrow);
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_unset_all();
+            let r = T::children(self.clone()).render(new_data.clone());
+            new_data
+                .persistent_storage
+                .borrow_mut()
+                .garbage_collection_cycle();
+
             let view = Rc::new(RefCell::new(MutableView {
                 children: Box::new(r),
                 layout_size: layout::Size {
                     width: 0.0,
                     height: 0.0,
                 },
-                parent: data.real_parent,
-                stack: data.stack.as_ref().clone(),
-                
+
+                parent: new_data.real_parent,
+                stack: match new_data.stack {
+                    ResourceStack::Owned(resources) => resources,
+                    ResourceStack::Borrow(resources) => resources.clone(),
+                },
+                persistent_storage: data.persistent_storage,
+                layout_position: layout::Position::default(),
             }));
+
             let mut m = self.borrow_mut();
             let mut attached = m.get_mut_attached();
             if let Some(k) = &mut attached {
                 k.swap(&view);
                 k.set_size(view.borrow().layout_size);
-                k.set_position(Position { x: 0.0, y: 0.0 });
+                k.set_position(view.borrow().layout_position);
             } else {
                 *attached = Some(view.clone());
             }
-            view
+
+            m.get_attached().clone().unwrap()
+        }
+
+        fn set_identity(self, identity: usize) -> Self {
+            self.borrow_mut().set_identity(identity);
+            self
         }
     }
 
@@ -154,11 +236,13 @@ pub mod native {
         }
 
         fn set_position(&mut self, to: layout::Position<f64>) {
+            self.borrow_mut().layout_position = to;
             self.borrow_mut().children.set_position(to);
         }
 
         fn destroy(&mut self) {
             self.borrow_mut().children.destroy();
+            // self.borrow_mut().parent = unsafe { Retained::from_raw(objc2::ffi::Nil) }.unwrap().downcast().unwrap();
         }
         fn preferred_size(&self, in_frame: &Size<f64>) -> Size<Option<f64>> {
             self.borrow().children.preferred_size(in_frame)
@@ -211,8 +295,11 @@ pub mod native {
                 view.setText(Some(&str));
                 view.sizeToFit();
 
-
-                let alignment = data.stack.get_resource::<TextAlignment>().copied().unwrap_or(TextAlignment::Center);
+                let alignment = data
+                    .stack
+                    .get_resource::<TextAlignment>()
+                    .copied()
+                    .unwrap_or(TextAlignment::Center);
                 view.setTextAlignment(match alignment {
                     TextAlignment::Leading => NSTextAlignment::Left,
                     TextAlignment::Center => NSTextAlignment::Center,
@@ -222,7 +309,7 @@ pub mod native {
                 view.setNumberOfLines(0);
 
                 use objc2_ui_kit::UIFont;
-                
+
                 let font_family = data
                     .stack
                     .get_resource::<FontFamily>()
@@ -334,6 +421,7 @@ pub mod native {
     pub struct RenderData<'a> {
         pub real_parent: Retained<UIView>,
         pub stack: crate::view::resources::ResourceStack<'a>,
+        pub persistent_storage: PersistentStorageRef,
     }
 
     impl<'a> RenderData<'a> {
@@ -345,6 +433,7 @@ pub mod native {
                 let d = RenderData {
                     real_parent: self.real_parent.clone(),
                     stack: ResourceStack::Borrow(stack_e),
+                    persistent_storage: self.persistent_storage.clone(),
                 };
 
                 with_fn(d)
@@ -401,8 +490,10 @@ pub mod native {
                     i += 1;
                     RenderData {
                         real_parent: vc.view().unwrap(),
+
                         //Tab bar cannot contain any styling rule
-                        stack: ResourceStack::Owned(Default::default())
+                        stack: ResourceStack::Owned(Default::default()),
+                        persistent_storage: todo!(),
                     }
                 });
                 let tabs = NSArray::from_retained_slice(&uitabs[..]);
@@ -426,8 +517,6 @@ pub mod native {
             self.views.iter_mut().for_each(|e| e.destroy());
         }
     }
-
-
 
     pub fn launch_application_with_view(root: impl RenderObject + 'static) {
         //setup the default filemanager

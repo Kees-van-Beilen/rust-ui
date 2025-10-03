@@ -1,6 +1,6 @@
-use objc2::{rc::Retained, AnyThread, MainThreadMarker};
+use objc2::{AnyThread, MainThreadMarker, rc::Retained};
 // use objc2_app_kit::{NSImageScaling, NSImageView};
-use objc2_quartz_core::{kCAGravityResizeAspect, kCAGravityResizeAspectFill, CALayer};
+use objc2_quartz_core::{CALayer, kCAGravityResizeAspect, kCAGravityResizeAspectFill};
 use objc2_ui_kit::{UIImage, UIImageView, UIView, UIViewContentMode};
 
 use crate::native::ios::UIViewRepresentable;
@@ -10,24 +10,24 @@ use crate::native::ios::UIViewRepresentable;
 pub struct NativeImageHandle(Retained<UIImage>);
 
 impl NativeImageHandle {
-    pub fn from_path(path:impl ToString)->Self{
+    pub fn from_path(path: impl ToString) -> Self {
         let path = path.to_string();
-        let file_name =  objc2_foundation::NSString::from_str(&path);
-        unsafe { 
+        let file_name = objc2_foundation::NSString::from_str(&path);
+        unsafe {
             NativeImageHandle(
-                UIImage::initWithContentsOfFile(UIImage::alloc(), &file_name).unwrap_or(UIImage::new())
-                // objc2_app_kit::NSImage::initWithContentsOfFile(objc2_app_kit::NSImage::alloc(), &file_name).unwrap()
+                UIImage::initWithContentsOfFile(UIImage::alloc(), &file_name)
+                    .unwrap_or(UIImage::new()), // objc2_app_kit::NSImage::initWithContentsOfFile(objc2_app_kit::NSImage::alloc(), &file_name).unwrap()
             )
         }
     }
 }
 
 pub struct ImageView {
-    ns_view:Retained<UIImageView>
+    ns_view: Retained<UIImageView>,
 }
 
 impl crate::layout::RenderObject for crate::views::ImageView {
-    type Output=ImageView;
+    type Output = ImageView;
 
     fn render(&self, data: crate::native::RenderData) -> Self::Output {
         let view = unsafe {
@@ -47,15 +47,12 @@ impl crate::layout::RenderObject for crate::views::ImageView {
             data.real_parent.addSubview(&view);
             view
         };
-        ImageView {
-            ns_view: view,
-        }
+        ImageView { ns_view: view }
     }
 }
 
 impl UIViewRepresentable for ImageView {
     fn ui_view(&self) -> &UIView {
-        &self.ns_view   
+        &self.ns_view
     }
 }
-

@@ -69,9 +69,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clone_dyn"
-version = "0.43.0"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1198bc16299c19d139a1df91e5b45929ebe231d4cd36dc9442175c3094dcaa9"
+checksum = "6d0c93ec0efcf229461df3e76f03a87bd9d8abd7cdd21ac0292e23a348f1ee9d"
 dependencies = [
  "clone_dyn_meta",
  "clone_dyn_types",
@@ -79,34 +79,25 @@ dependencies = [
 
 [[package]]
 name = "clone_dyn_meta"
-version = "0.40.0"
+version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20a14bac215dde248ec40e887b0519c4a0310e66f9d4223ddc886cc06e3d3b58"
+checksum = "6be8f434e978ac447a767ad9fe084bd32b455f6e89917a3b77233766019908cb"
 dependencies = [
- "component_model_types",
+ "former_types",
  "macro_tools",
 ]
 
 [[package]]
 name = "clone_dyn_types"
-version = "0.38.0"
+version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec3ea6a6cad557cf4394aecff2bda6266914123ad9c46a9cb1c576b10f80438f"
+checksum = "7546aa32ad2d6e23c47edfc649c1e78e1a30392f51015efe30d0d4a0ed08310e"
 
 [[package]]
 name = "collection_tools"
-version = "0.24.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18fcc56615bb63dd4ae547b1ff7dc13e961179c722580a23a6a87aa32c1d00e1"
-
-[[package]]
-name = "component_model_types"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "316c41f2534ea0b83adbfc97dd1a085ac685c4b3e02c1d4f861152554582e42a"
-dependencies = [
- "collection_tools",
-]
+checksum = "bf48338f35383bc9ba7a4657a1c5814eb41377a8d1834cdae23fa61ffc8333e1"
 
 [[package]]
 name = "const_format"
@@ -133,15 +124,6 @@ name = "const_panic"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2459fc9262a1aa204eb4b5764ad4f189caec88aea9634389c0a25f8be7f6265e"
-
-[[package]]
-name = "convert_case"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
-dependencies = [
- "unicode-segmentation",
-]
 
 [[package]]
 name = "deranged"
@@ -221,6 +203,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "former_types"
+version = "2.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09c7615fa9c6b6f779c382c8ddeabbe7a544c76815fd4577a79abfbc4d6bd791"
+dependencies = [
+ "collection_tools",
+]
+
+[[package]]
 name = "glam"
 version = "0.29.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -242,15 +233,15 @@ dependencies = [
 
 [[package]]
 name = "interval_adapter"
-version = "0.36.0"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33c6971db50179366f38ededa9cf1c52cec6be9e3fbca5f5101dbc997a798da6"
+checksum = "6c340f983277de7e3fcf8435f5fd14cab10d90558bba19bf70447299c4bd111a"
 
 [[package]]
 name = "iter_tools"
-version = "0.37.0"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e68442ead22fbfa506eaa0b613826a373594f86e1e5be6db2d2d1dc1189420e8"
+checksum = "e96d3cdcfec21b319c0dec1d0760a6f25f44b49d273cc7bc70f7444a0c253eb1"
 dependencies = [
  "clone_dyn_types",
  "itertools 0.11.0",
@@ -294,14 +285,13 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "macro_tools"
-version = "0.66.0"
+version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c408c59a48c1dcb43b2f9b147279d2c029caef846ed756a733b0cad594868a14"
+checksum = "2dff6b6c0e5b95f32e260350e1dd6d13a6570d0db1f3bab800fb5f542b3bf858"
 dependencies = [
  "clone_dyn_types",
- "component_model_types",
  "const_format",
- "convert_case",
+ "former_types",
  "interval_adapter",
  "iter_tools",
  "proc-macro2",
@@ -562,21 +552,8 @@ dependencies = [
 name = "rust-ui"
 version = "0.0.1"
 dependencies = [
- "bevy_color",
- "block2",
- "clone_dyn",
- "log",
- "objc2",
- "objc2-app-kit",
- "objc2-core-graphics",
- "objc2-foundation",
- "objc2-os-log",
- "objc2-quartz-core",
- "objc2-ui-kit",
  "rust_ui_core",
  "rust_ui_macro",
- "syslog",
- "tuplex",
 ]
 
 [[package]]
@@ -715,12 +692,6 @@ name = "unicode-ident"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6ccf251212114b54433ec949fd6a7841275f9ada20dddd2f29e9ceea4501493"
 
 [[package]]
 name = "unicode-xid"

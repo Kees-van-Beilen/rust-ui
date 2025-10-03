@@ -42,16 +42,13 @@ impl<T: RenderObject> RenderObject for MarginView<T> {
     }
 }
 impl<T: ComputableLayout> ComputableLayout for RenderedMarginView<T> {
-    fn preferred_size(
-        &self,
-        in_frame: &crate::layout::Size<f64>,
-    ) -> Size<Option<f64>> {
+    fn preferred_size(&self, in_frame: &crate::layout::Size<f64>) -> Size<Option<f64>> {
         let mut size = self.0.preferred_size(in_frame);
         if let Some(width) = &mut size.width {
             *width += self.1.left + self.1.right;
         }
         if let Some(height) = &mut size.height {
-            *height +=  self.1.top + self.1.bottom;
+            *height += self.1.top + self.1.bottom;
         }
         size
     }

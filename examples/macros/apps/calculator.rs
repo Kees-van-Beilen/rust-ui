@@ -5,9 +5,8 @@
 // - a clear button
 // - a button to switch signs
 // Try adding these features yourself
-#![feature(more_qualified_paths,default_field_values)]
+#![feature(more_qualified_paths, default_field_values)]
 use rust_ui::prelude::*;
-
 
 // we first create some data types, these represent the mathematical operations you may perform
 enum Op {
@@ -18,12 +17,12 @@ enum Op {
 
 impl Op {
     // a utility function we call later
-    pub fn from_char(c:char)->Option<Self> {
+    pub fn from_char(c: char) -> Option<Self> {
         match c {
-            'x'=>Some(Self::Mul),
-            '+'=>Some(Self::Add),
-            '-'=>Some(Self::Sub),
-            _=>None
+            'x' => Some(Self::Mul),
+            '+' => Some(Self::Add),
+            '-' => Some(Self::Sub),
+            _ => None,
         }
     }
 }
@@ -33,33 +32,36 @@ enum CalculatorState {
     // Here we display the first number wer are entering
     FirstNumber(String),
     // Here we have received the mathematical operation we will be performing
-    // and we display the second number we are entering. 
+    // and we display the second number we are entering.
     // We still store the first number, that way we can calculate the result when the '=' button is pressed.
-    SecondNumber{
-        first_number:String,
-        op:Op,
-        second_number:String,
+    SecondNumber {
+        first_number: String,
+        op: Op,
+        second_number: String,
     },
     // here we display the result after the '=' button has been pressed
-    Result(String)
+    Result(String),
 }
 
 impl CalculatorState {
     // this is a utility function.
     // These function are handy because we wouldn't want to write big logic heavy code inside of our ui code
-    pub fn text(&self)->&str{
+    pub fn text(&self) -> &str {
         match self {
             CalculatorState::FirstNumber(num) => &num,
-            CalculatorState::SecondNumber { first_number:_, op:_, second_number } => &second_number,
+            CalculatorState::SecondNumber {
+                first_number: _,
+                op: _,
+                second_number,
+            } => &second_number,
             CalculatorState::Result(num) => &num,
         }
     }
 }
 
 // define the color of the buttons
-const GREY:Color = Color::oklch(0.38, 0.0, 356.82);
-const PINK:Color = Color::oklch(0.61, 0.16, 356.82);
-
+const GREY: Color = Color::oklch(0.38, 0.0, 356.82);
+const PINK: Color = Color::oklch(0.61, 0.16, 356.82);
 
 // now we start defining our ui components
 // first the calculator buttons
@@ -90,21 +92,21 @@ struct CalcButtonView {
                 match borrow {
                     // in the case we pressed '.' we want to add a decimal separator iff the number doesn't already have one
                     CalculatorState::SecondNumber { first_number:_, op:_, second_number:num }
-                    | CalculatorState::FirstNumber(num) if face_text == '.' && !num.contains('.') => num.push('.'),
+                    | CalculatorState::FirstNumber(num) if *face_text == '.' && !num.contains('.') => num.push('.'),
                     // if we pressed a number and the current number displayed is '0' we want to replace it and not append it.
                     // otherwise we would get something like "02" instead of "2"
                     CalculatorState::SecondNumber { first_number:_, op:_, second_number:num }
                     | CalculatorState::FirstNumber(num) if num == "0" => {
                         num.clear();
-                        num.push(face_text);
+                        num.push(*face_text);
                     },
                     // if we pressed a number, we want to add it
                     CalculatorState::SecondNumber { first_number:_, op:_, second_number:num }
-                    | CalculatorState::FirstNumber(num) if face_text.is_ascii_digit() => num.push(face_text),
+                    | CalculatorState::FirstNumber(num) if face_text.is_ascii_digit() => num.push(*face_text),
                     // if we press a number whilst a result is displayed, we first remove the result
                     CalculatorState::Result(_) if face_text.is_ascii_digit() => *borrow = CalculatorState::FirstNumber(face_text.to_string()),
                     // if we press the '=' button we calculate the result
-                    CalculatorState::SecondNumber { first_number, op, second_number } if face_text == '=' => {
+                    CalculatorState::SecondNumber { first_number, op, second_number } if *face_text == '=' => {
                         let a:f64 = first_number.parse().unwrap();
                         let b:f64 = second_number.parse().unwrap();
                         let c = match op {
@@ -117,7 +119,7 @@ struct CalcButtonView {
                     }
                     // if al else fails we check if face_text is an operator and advance the app state accordingly
                     CalculatorState::Result(num)
-                    |CalculatorState::FirstNumber(num) => if let Some(op) = Op::from_char(face_text) {
+                    |CalculatorState::FirstNumber(num) => if let Some(op) = Op::from_char(*face_text) {
                         *borrow = CalculatorState::SecondNumber { first_number: num.clone(), op, second_number: "0".to_string() }
                     }
                     // if this button doesn't make sense to do anything at the current application state, then don't do anything
@@ -127,7 +129,6 @@ struct CalcButtonView {
             
     }
 }
-
 
 // This is the root view, which we decorate with the main attribute
 // that marks it the entrypoint of the application
