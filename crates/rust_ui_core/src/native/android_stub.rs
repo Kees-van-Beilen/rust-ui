@@ -16,14 +16,6 @@ pub mod native {
         fn rerender(&self) {
             todo!()
         }
-
-        fn enqueue_change(&self) {
-            todo!()
-        }
-
-        fn flush_changes(&self) {
-            todo!()
-        }
     }
 
     pub struct NativeImageHandle {}
@@ -33,4 +25,6 @@ pub mod native {
             todo!()
         }
     }
+
+    
 }

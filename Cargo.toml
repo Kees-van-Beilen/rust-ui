@@ -64,9 +64,13 @@ path = "examples/macros/hello_world.rs"
 name = "image"
 path = "examples/macros/image.rs"
 
+# [[example]]
+# name = "colors"
+# path = "examples/macros/colors.rs"
 [[example]]
-name = "colors"
+name = "android_colors"
 path = "examples/macros/colors.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "counter"
@@ -123,3 +127,16 @@ long_description = """
 A longer description, but that doesn't change the
 fact that this is an  example application.
 """
+
+[package.metadata.android]
+# Specifies the package property of the manifest.
+package = "com.example.myapplication"
+build_targets = [ "armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android" ]
+apk_name = "myapplication"
+[package.metadata.android.application]
+label="myapplication"
+[package.metadata.android.sdk]
+target_sdk_version = 31
+
+[package.metadata.rust-ui.android]
+main_activity_class_entry_method = "com.example.myapplication.MainActivity.mainEntry"

@@ -47,6 +47,7 @@ impl CalculatorState {
     // this is a utility function.
     // These function are handy because we wouldn't want to write big logic heavy code inside of our ui code
     pub fn text(&self) -> &str {
+
         match self {
             CalculatorState::FirstNumber(num) => &num,
             CalculatorState::SecondNumber {

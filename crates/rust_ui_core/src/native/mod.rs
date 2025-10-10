@@ -11,6 +11,6 @@ pub use ios::native::*;
 pub use macos::native::*;
 
 #[cfg(target_os = "android")]
-mod android_stub;
+mod android;
 #[cfg(target_os = "android")]
-pub use android_stub::native::*;
+pub use android::native::*;

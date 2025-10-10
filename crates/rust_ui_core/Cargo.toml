@@ -11,6 +11,25 @@ log = "0.4.27"
 syslog = "7.0.0"
 tuplex = "0.1.2"
 
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21.1"
+[target.'cfg(target_os = "android")'.dependencies.android2_android]
+git = "https://codeberg.org/kees-van-beilen/android2.git"
+features = [
+    "android.app.Activity",
+    "android.app.ActionBar",
+    "android.view.Window",
+    "android.view.View",
+    "android.view.ViewGroup",
+    "android.widget.RelativeLayout",
+    "android.widget.RelativeLayout.LayoutParams",
+    "android.content.Context",
+    "android.view.ViewGroup.LayoutParams",
+    "android.content.res.Resources",
+    "android.app.Fragment",
+    "android.util.DisplayMetrics"
+]
+
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block2 = "0.6.1"
