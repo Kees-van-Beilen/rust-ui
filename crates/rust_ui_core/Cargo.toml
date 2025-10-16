@@ -15,19 +15,35 @@ tuplex = "0.1.2"
 jni = "0.21.1"
 [target.'cfg(target_os = "android")'.dependencies.android2_android]
 git = "https://codeberg.org/kees-van-beilen/android2.git"
+rev = "bb14d5ed57"
 features = [
     "android.app.Activity",
     "android.app.ActionBar",
+    "android.widget.TextView",
     "android.view.Window",
     "android.view.View",
+    "android.view.ContextThemeWrapper",
+    "android.content.ContextWrapper",
     "android.view.ViewGroup",
+    "android.view.ViewParent",
     "android.widget.RelativeLayout",
     "android.widget.RelativeLayout.LayoutParams",
     "android.content.Context",
     "android.view.ViewGroup.LayoutParams",
     "android.content.res.Resources",
     "android.app.Fragment",
-    "android.util.DisplayMetrics"
+    "android.util.DisplayMetrics",
+    "android.text.TextPaint",
+    "android.graphics.Paint",
+    "android.graphics.Typeface",
+    "java.lang.CharSequence"
+]
+[target.'cfg(target_os = "android")'.dependencies.android2_java]
+git = "https://codeberg.org/kees-van-beilen/android2.git"
+rev = "bb14d5ed57"
+features = [
+    "java.lang.CharSequence",
+    "java.lang.String"
 ]
 
 

@@ -5,7 +5,16 @@ version = 4
 [[package]]
 name = "android2_android"
 version = "0.1.0"
-source = "git+https://codeberg.org/kees-van-beilen/android2.git#12f7d6e8a7f5b62fcf9a1cd19d296e577f13eedf"
+source = "git+https://codeberg.org/kees-van-beilen/android2.git?rev=bb14d5ed57#bb14d5ed571dac92e96f49cd69640ac6651c675a"
+dependencies = [
+ "android2_java",
+ "jni",
+]
+
+[[package]]
+name = "android2_java"
+version = "0.1.0"
+source = "git+https://codeberg.org/kees-van-beilen/android2.git?rev=bb14d5ed57#bb14d5ed571dac92e96f49cd69640ac6651c675a"
 dependencies = [
  "jni",
 ]
@@ -641,6 +650,7 @@ name = "rust_ui_core"
 version = "0.1.0"
 dependencies = [
  "android2_android",
+ "android2_java",
  "bevy_color",
  "block2",
  "clone_dyn",

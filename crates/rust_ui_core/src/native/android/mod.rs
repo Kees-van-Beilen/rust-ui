@@ -3,46 +3,80 @@ use std::cell::RefCell;
 pub mod helper;
 mod views;
 
-thread_local! {
-    pub static ENV:RefCell<*mut jni::JNIEnv<'static>> = RefCell::new(std::ptr::null_mut());
-}
+
 
 pub mod native {
+    thread_local! {
+        pub static ENV:RefCell<*mut jni::JNIEnv<'static>> = RefCell::new(std::ptr::null_mut());
+    }
     pub use super::helper;
     use crate::{
-        android_println, layout::{ComputableLayout, Position, RenderObject, Size}, native::android::ENV, view::{
+        android_println, layout::{ComputableLayout, Position, RenderObject, Size}, view::{
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack},
         }
     };
+    // pub use crate::native::android::ENV;
+    use android2_android::{app::{Activity, Fragment}, content::{Context, ContextWrapper}, view::{ContextThemeWrapper, ViewGroup}};
     pub use jni;
+    use jni::objects::JObject;
     use std::{cell::RefCell, mem, rc::Rc};
+
+
+    ///
+    /// Note for the android implementors:
+    /// - You cannot create a local frame this is UB see https://github.com/jni-rs/jni-rs/issues/392
+    /// - So all objects must live! (By using retained, or by being a child of a retained)
     // #[derive(Clone)]
-    pub struct RenderData<'a, 'jni> {
+    pub struct RenderData<'a,'b, 'jni> {
         pub stack: ResourceStack<'a>,
         pub persistent_storage: PersistentStorageRef,
-        pub parent: android2_android::view::ViewGroup<'jni>,
-        pub context: android2_android::content::Context<'jni>
+        pub parent:&'b android2_android::view::ViewGroup<'jni>,
+        pub instance:&'b android2_android::app::Activity<'jni>,
+        pub jni:jni::JNIEnv<'jni>
     }
-    impl<'a, 'jni> Clone for RenderData<'a, 'jni> {
+
+    pub trait ActivityExtension {
+        fn context(&self)->&Context;
+    }
+    impl<'jni> ActivityExtension for android2_android::app::Activity<'jni> {
+        fn context(&self)->&Context {
+            let a: &ContextThemeWrapper = self.as_ref();
+            let b: &ContextWrapper = a.as_ref();
+            b.as_ref()
+        }
+    }
+
+    impl<'a, 'jni> Clone for RenderData<'a,'_, 'jni> {
         fn clone(&self) -> Self {
             Self {
                 stack: self.stack.clone(),
                 persistent_storage: self.persistent_storage.clone(),
-                parent: android2_android::view::ViewGroup::from(unsafe {
-                    jni::objects::JObject::from_raw(self.parent.as_ref().as_raw())
-                }),
-                context:unsafe { mem::transmute_copy(&self.context) }
+                parent: self.parent.clone(),
+                instance:self.instance.clone(),
+                jni:unsafe { self.jni.unsafe_clone() }
             }
         }
     }
 
-    impl RenderData<'_, '_> {
+    impl RenderData<'_,'_, '_> {
+
+     
         pub fn ament_with<T: Resource, F, K>(&mut self, element: T, with_fn: F) -> K
         where
             for<'b> F: FnOnce(RenderData) -> K,
         {
-            todo!()
+            self.stack.amend_with(element, |stack_e| {
+                let d = RenderData {
+                    stack: ResourceStack::Borrow(stack_e),
+                    persistent_storage: self.persistent_storage.clone(),
+                    parent:self.parent.clone(),
+                    instance:self.instance.clone(),
+                    jni:unsafe{ self.jni.unsafe_clone()}
+                };
+
+                with_fn(d)
+            })
         }
     }
     pub struct MutableView {
@@ -111,15 +145,21 @@ pub mod native {
             jni::objects::JObject::from_raw(instance.as_raw())
         });
         let instance = android2_android::app::Activity::from(instance);
-        let fragment:android2_android::app::Fragment = unsafe {mem::transmute_copy(&instance)};
-        let resources = fragment.get_resources(&mut env);
+        
+        let resources = context.get_resources(&mut env);
         let metrics = resources.get_display_metrics(&mut env);
         let height = env.get_field(&metrics, "heightPixels", "I").unwrap().i().unwrap();
         let width = env.get_field(&metrics, "widthPixels", "I").unwrap().i().unwrap();
         // root.render(RenderData {
         //     stack: Default::default(),
         //     persistent_storage: Default::default()
-        // });
+        // });  
+
+        //register custom panic handler
+        std::panic::set_hook(Box::new(|info| {
+            android_println!("Rust panic: {info}");
+        }));
+        // env.clo
 
 
 
@@ -131,15 +171,17 @@ pub mod native {
         // let height = decor.get_height(&mut env);
         // window.set_content_view_1(arg0, env);
         let native_root = android2_android::widget::RelativeLayout::new_0(&context, &mut env);
-        let native_root_view = unsafe { mem::transmute_copy(&native_root) };
+        let native_root_group: &ViewGroup = native_root.as_ref();
+        let native_root_view = native_root_group.as_ref();
         instance.set_content_view_1(&native_root_view, &mut env);
         ENV.with(|e|*e.borrow_mut() = (&mut env as *mut jni::JNIEnv<'local>)as *mut jni::JNIEnv<'static>);
         android_println!("start render");
         let mut rendered_view = root.render(RenderData {
             stack: Default::default(),
             persistent_storage: Default::default(),
-            parent: unsafe { mem::transmute_copy(&native_root) },
-            context
+            parent: native_root.as_ref(),
+            instance:&instance,
+            jni:env
         });
         android_println!("start set size");
 
