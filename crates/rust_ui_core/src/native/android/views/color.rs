@@ -11,7 +11,7 @@ pub struct NativeColorView(Retained<View<'static>>);
 impl RenderObject for crate::views::ColorView {
     type Output=NativeColorView;
 
-    fn render<'a,'jni>(&self, mut data: crate::native::RenderData<'a,'_,'jni>) -> Self::Output {
+    fn render<'a,'jni>(&self, mut data: crate::native::RenderData<'a,'jni>) -> Self::Output {
         // let view = {
         // let (context,env)  = data.context_jni();
         android_println!("start render");
@@ -34,7 +34,7 @@ impl ComputableLayout for NativeColorView {
         android_println!("got env");
 
         let layout = self.0.get_layout_params(env);
-        android_println!("got layout {:?}",layout.as_ref());
+
 
         match env.set_field(&layout, "width", "I", (to.width as i32).into()) {
             Ok(_) => {},

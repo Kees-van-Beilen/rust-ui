@@ -10,11 +10,16 @@ pub const RUST_UI_TAG:&CStr = match CStr::from_bytes_with_nul(b"rust-ui\0") {
     Err(_) => panic!(),
 };
 
-#[derive(Clone)]
+
 pub struct Retained<T:AsRef<JObject<'static>>>{
     pub global:jni::objects::GlobalRef,
     pub __marker:PhantomData<T>,
 }
+impl<A:AsRef<JObject<'static>>> Clone for Retained<A> {
+    fn clone(&self) -> Self {
+        Self { global: self.global.clone(), __marker: self.__marker.clone() }
+    }
+} 
 
 // impl<'local,T:From<JObject<'local>>+AsRef<JObject<'static>>> Retained<T>  {
 //     pub fn new<'a,'jni>(this:T,env:&'a mut jni::JNIEnv<'jni>) -> Self{

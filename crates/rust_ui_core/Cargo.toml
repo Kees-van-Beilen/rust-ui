@@ -15,11 +15,12 @@ tuplex = "0.1.2"
 jni = "0.21.1"
 [target.'cfg(target_os = "android")'.dependencies.android2_android]
 git = "https://codeberg.org/kees-van-beilen/android2.git"
-rev = "bb14d5ed57"
+rev = "5781948bc2"
 features = [
     "android.app.Activity",
     "android.app.ActionBar",
     "android.widget.TextView",
+    "android.widget.Button",
     "android.view.Window",
     "android.view.View",
     "android.view.ContextThemeWrapper",
@@ -36,15 +37,35 @@ features = [
     "android.text.TextPaint",
     "android.graphics.Paint",
     "android.graphics.Typeface",
-    "java.lang.CharSequence"
+    "android.view.View.OnClickListener",
+    "java.lang.CharSequence",
+    "java.lang.Object"
 ]
 [target.'cfg(target_os = "android")'.dependencies.android2_java]
 git = "https://codeberg.org/kees-van-beilen/android2.git"
-rev = "bb14d5ed57"
+rev = "5781948bc2"
 features = [
     "java.lang.CharSequence",
-    "java.lang.String"
+    "java.lang.String",
+    "java.lang.Object",
+    "java.lang.Class",
+    "java.lang.ClassLoader",
+    "java.nio.ByteBuffer",
+    "java.lang.reflect.Constructor"
 ]
+
+[target.'cfg(target_os = "android")'.dependencies.android2_dalvik]
+git = "https://codeberg.org/kees-van-beilen/android2.git"
+rev = "5781948bc2"
+features = [
+    "dalvik.system.InMemoryDexClassLoader",
+    "dalvik.system.BaseDexClassLoader",
+    "java.lang.ClassLoader",
+    "java.lang.String",
+    "java.nio.ByteBuffer"
+]
+
+#dalvik.system.BaseDexClassLoader
 
 
 [target.'cfg(target_os = "macos")'.dependencies]
