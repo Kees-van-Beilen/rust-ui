@@ -1,6 +1,8 @@
-use std::{ffi::CStr, marker::{ PhantomData}, mem, ops::Deref};
+use std::{ffi::CStr, marker::PhantomData, mem, ops::Deref, ptr::null_mut};
 
 use jni::objects::JObject;
+
+use crate::native::ENV;
 
 
 
@@ -34,7 +36,7 @@ impl<T:AsRef<JObject<'static>>> Deref for Retained<T> {
     type Target=T;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { mem::transmute(self.global.as_obj()) }
+        unsafe {mem::transmute(self.global.as_obj()) }
     }
 }
 
@@ -56,15 +58,33 @@ macro_rules! retain {
         }
     };
 }
-/// You can only get access to the env during a layout update
-#[macro_export]
-macro_rules! get_env {
-    () => {
-        $crate::native::ENV.with(|e|{
-            let k = e.borrow();
-            unsafe { k.as_mut().unwrap() }
-        })
-    };
+
+
+/// Get access to the jni env. Accessing the env from an invalid context results in a panic
+/// 
+/// SAFETY: 
+///  - requires main thread 
+///  - you may not use the reference longer than the lifetime of your code body (no storing the env)
+pub unsafe fn get_env() -> &'static mut jni::JNIEnv<'static> {
+    unsafe {
+        ENV.as_mut().expect("there is currently no java context available. This error can happen when there is a layout update (or interaction with android) that happens in for instance async code (or code that runs not as a result of an android callback) Take a look at all your unsafe code blocks they might be the main cause")
+    }
+}
+
+pub fn with_env(env:jni::JNIEnv,callback:impl FnOnce(jni::JNIEnv)){
+    unsafe  {
+        let prev_env = ENV;
+        ENV = &env as *const jni::JNIEnv as *mut jni::JNIEnv;
+        callback(env.unsafe_clone());
+        ENV = prev_env;
+        drop(env);
+    }
+}
+
+pub fn try_with_env(env:jni::JNIEnv,callback:impl FnOnce(jni::JNIEnv)){
+    if !unsafe { ENV.is_null() } {
+        with_env(env, callback);
+    }
 }
 
 #[macro_export]

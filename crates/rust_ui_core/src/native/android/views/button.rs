@@ -1,9 +1,9 @@
-use std::{mem, sync::{Arc, Mutex}};
+use std::{any::type_name, mem, sync::{Arc, Mutex}};
 
 use android2_android::{graphics::Typeface, view::View, widget::{Button, TextView}};
 use android2_java::lang::CharSequence;
 
-use crate::{android_println, get_env, layout::{ComputableLayout, RenderObject, Size}, native::{android::{callback::CallbackBlock, views::{delegate_destroy, delegate_set_position, delegate_set_size}}, helper::Retained, ActivityExtension}, retain, views::{FontSize, FontWeight}};
+use crate::{android_println, layout::{ComputableLayout, RenderObject, Size}, native::{ActivityExtension, android::{callback::CallbackBlock, views::{delegate_destroy, delegate_set_position, delegate_set_size}}, helper::{Retained, get_env}}, retain, views::{FontSize, FontWeight}};
 
 impl RenderObject for crate::views::Button {
     type Output=NativeButtonView;
@@ -60,12 +60,20 @@ impl ComputableLayout for NativeButtonView {
 
 
     fn preferred_size(&self, _in_frame: &crate::prelude::Size<f64>) -> crate::prelude::Size<Option<f64>> {
-        let env = get_env!();
-        let text_view: &TextView = self.0.as_ref();
+        android_println!("|>start2 {}",type_name::<Self>());
+        let env = unsafe { get_env() };
+        let obj_bind = self.0.global.as_obj();
+
+        let text_view: TextView = unsafe { mem::transmute_copy(obj_bind) };
         let view:&View = text_view.as_ref();
+        // android_println!("{:?}",env.find_class("name"));
+        android_println!("|>measure {:?}",unsafe { mem::transmute_copy::<_,jni::sys::jobject>(view) });
         view.measure(0, 0, env);
+        android_println!("|>measure {:?}",unsafe { mem::transmute_copy::<_,jni::sys::jobject>(view) });
+        
         let height = view.get_measured_height(env);
         let width = view.get_measured_width(env);
+        android_println!("|>end");
         Size {
             width: Some(width as f64),
             height: Some(height as f64),

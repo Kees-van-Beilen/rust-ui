@@ -3,7 +3,7 @@ use std::{marker::PhantomData, mem, ops::Deref};
 use android2_android::view::{View, ViewGroup};
 use jni::objects::JObject;
 
-use crate::{android_println, get_env, layout::{ComputableLayout, RenderObject}, native::{ helper::Retained, ActivityExtension}, prelude::frame::FrameView, retain};
+use crate::{android_println, layout::{ComputableLayout, RenderObject}, native::{ ActivityExtension, helper::{Retained, get_env}}, prelude::frame::FrameView, retain};
 
 pub struct NativeColorView(Retained<View<'static>>);
 
@@ -30,7 +30,7 @@ impl ComputableLayout for NativeColorView {
     fn set_size(&mut self, to: crate::prelude::Size<f64>) {
         // let this = self.0.d
         android_println!("start size");
-        let env = get_env!();
+        let env = unsafe { get_env() };
         android_println!("got env");
 
         let layout = self.0.get_layout_params(env);
@@ -54,7 +54,7 @@ impl ComputableLayout for NativeColorView {
 
     fn set_position(&mut self, to: crate::prelude::Position<f64>) {
         // let this: android2_android::view::View = unsafe {mem::transmute(self.0)};
-        let env = get_env!();
+        let env = unsafe { get_env() };
 
         self.0.set_x(to.x as f32, env);
         self.0.set_y(to.y as f32, env);
@@ -62,7 +62,7 @@ impl ComputableLayout for NativeColorView {
 
     fn destroy(&mut self) {
         // let this: android2_android::view::View = unsafe {mem::transmute(self.0)};
-        let env = get_env!();
+        let env = unsafe { get_env() };
         let parent = self.0.get_parent(env);
         let frame_layout:ViewGroup = unsafe { mem::transmute(parent) };
         frame_layout.remove_view(self.0.deref(), env);

@@ -12,16 +12,17 @@ mod views;
 pub mod native {
     //global env was a bad idea. but I don't see any other way.
     //the idea is that whenever java calls back into native, we update the env.
-    thread_local! {
-        pub static ENV:RefCell<*mut jni::JNIEnv<'static>> = RefCell::new(std::ptr::null_mut());
+    // thread_local! {
+    //     pub static ENV:RefCell<*mut jni::JNIEnv<'static>> = RefCell::new(std::ptr::null_mut());
         
-    }
+    // }
+    pub static mut ENV:*mut jni::JNIEnv<'static> = std::ptr::null_mut();
     //maybe this wil work better
     pub static mut ACTIVITY:*mut jni::sys::jobject = unsafe { mem::transmute(std::ptr::null_mut() as *mut jni::sys::jobject) };
 
     pub use super::helper;
     use crate::{
-        android_println, get_env, layout::{ComputableLayout, Position, RenderObject, Size}, native::helper::Retained, retain, view::{
+        android_println, layout::{ComputableLayout, Position, RenderObject, Size}, native::helper::{Retained, get_env, with_env}, retain, view::{
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
         }
@@ -108,7 +109,7 @@ pub mod native {
                     b.children.destroy();
                     let render_data = RenderData {
                         parent:b.parent.clone(),
-                        jni:unsafe { get_env!().unsafe_clone() },
+                        jni:unsafe { get_env().unsafe_clone() },
                         instance:unsafe { mem::transmute(ACTIVITY) },
                         // real_parent: b.parent.clone(),
                         // parent:
@@ -192,7 +193,7 @@ pub mod native {
             let new_data = RenderData {
                 // real_parent: data.real_parent,
                 parent:data.parent,
-                jni:unsafe { get_env!().unsafe_clone() },
+                jni:unsafe { get_env().unsafe_clone() },
                 instance:unsafe {
                     mem::transmute(ACTIVITY)
                 },
@@ -274,7 +275,8 @@ pub mod native {
 
         //register custom panic handler
         std::panic::set_hook(Box::new(|info| {
-            android_println!("Rust panic: {info}");
+            android_println!("Rust panic: {info} \n");
+            android_println!("Backtrace: {} \n",std::backtrace::Backtrace::force_capture());
         }));
         // env.clo
 
@@ -309,27 +311,39 @@ pub mod native {
         instance.set_content_view_1(&native_root_view, &mut env);
         // let instance_object: &jni::objects::JObject = instance.as_ref();
         // let inst_o: &jni::objects::JObject = instance.as_ref();
+        let glob = env.new_global_ref(instance).unwrap();
+
         
-        unsafe {ACTIVITY = mem::transmute(instance)};
+        unsafe {ACTIVITY = mem::transmute(glob.as_raw())};
+        //SAFETY: the glob will remain in memory for the duration of the program
+        mem::forget(glob);
 
-        ENV.with(|e|*e.borrow_mut() = (&mut env as *mut jni::JNIEnv<'local>)as *mut jni::JNIEnv<'static>);
-        android_println!("start render");
-        let mut rendered_view = root.render(RenderData {
-            stack: Default::default(),
-            persistent_storage: Default::default(),
-            parent: retained_root,
-            instance:unsafe{mem::transmute(ACTIVITY)},
-            jni:env
+        // unsafe {
+        //     ENV = &mut env as *mut jni::JNIEnv<'local> as *mut jni::JNIEnv<'static>;
+        // }
+        // ENV.with(|e|*e.borrow_mut() = (&mut env as *mut jni::JNIEnv<'local>)as *mut jni::JNIEnv<'static>);
+        
+        
+        with_env(env, |env|{
+            
+            android_println!("start render");
+            let mut rendered_view = root.render(RenderData {
+                stack: Default::default(),
+                persistent_storage: Default::default(),
+                parent: retained_root,
+                instance:unsafe{mem::transmute(ACTIVITY)},
+                jni: env 
+            });
+            android_println!("start set size");
+            rendered_view.set_size(Size {
+                width: width as f64,
+                height: height as f64,
+            });
+            android_println!("set size {width} {height}");
+
+            rendered_view.set_position(Position { x: 0.0, y: 0.0 });
         });
-        android_println!("start set size");
-
-        rendered_view.set_size(Size {
-            width: width as f64,
-            height: height as f64,
-        });
-        android_println!("set size {width} {height}");
-
-        rendered_view.set_position(Position { x: 0.0, y: 0.0 });
+        
 
 
         // root.render(data)

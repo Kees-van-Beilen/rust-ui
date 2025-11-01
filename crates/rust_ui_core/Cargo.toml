@@ -18,6 +18,9 @@ git = "https://codeberg.org/kees-van-beilen/android2.git"
 rev = "5781948bc2"
 features = [
     "android.app.Activity",
+    "android.text.TextWatcher",
+    "android.widget.EditText",
+    "android.text.Editable",
     "android.app.ActionBar",
     "android.widget.TextView",
     "android.widget.Button",
