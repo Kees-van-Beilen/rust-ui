@@ -6,7 +6,7 @@ edition = "2024"
 
 [dependencies]
 bevy_color = {version="0.15.4",default-features = false}
-clone_dyn = "0.32.0"
+clone_dyn = "0.51.0"
 log = "0.4.27"
 syslog = "7.0.0"
 tuplex = "0.1.2"
