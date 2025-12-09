@@ -245,13 +245,14 @@ pub mod native {
         }
     }
 
-    pub struct NativeImageHandle {}
+    pub use super::views::image::NativeImageHandle;
+    // pub struct NativeImageHandle {}
 
-    impl NativeImageHandle {
-        pub fn from_path(path: impl ToString) -> Self {
-            todo!()
-        }
-    }
+    // impl NativeImageHandle {
+    //     pub fn from_path(path: impl ToString) -> Self {
+    //         todo!()
+    //     }
+    // }
 
     pub fn launch_application_with_view<'local>(
         root: impl RenderObject + 'static,

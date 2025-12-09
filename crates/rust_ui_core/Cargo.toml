@@ -20,6 +20,11 @@ features = [
     "android.app.Activity",
     "android.text.TextWatcher",
     "android.widget.EditText",
+    "android.widget.ImageView",
+    "android.widget.ImageView.ScaleType",
+    "android.graphics.BitmapFactory",
+    "android.graphics.Bitmap",
+    "android.content.res.AssetManager",
     "android.text.Editable",
     "android.app.ActionBar",
     "android.widget.TextView",
@@ -42,7 +47,9 @@ features = [
     "android.graphics.Typeface",
     "android.view.View.OnClickListener",
     "java.lang.CharSequence",
-    "java.lang.Object"
+    "java.io.InputStream",
+    "java.lang.Object",
+    "java.lang.String"
 ]
 [target.'cfg(target_os = "android")'.dependencies.android2_java]
 git = "https://codeberg.org/kees-van-beilen/android2.git"
@@ -54,6 +61,7 @@ features = [
     "java.lang.Class",
     "java.lang.ClassLoader",
     "java.nio.ByteBuffer",
+    "java.io.InputStream",
     "java.lang.reflect.Constructor"
 ]
 
@@ -65,7 +73,7 @@ features = [
     "dalvik.system.BaseDexClassLoader",
     "java.lang.ClassLoader",
     "java.lang.String",
-    "java.nio.ByteBuffer"
+    "java.nio.ByteBuffer",
 ]
 
 #dalvik.system.BaseDexClassLoader

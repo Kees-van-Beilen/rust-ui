@@ -59,10 +59,18 @@ path = "examples/macros/for_loop.rs"
 [[example]]
 name = "hello_world"
 path = "examples/macros/hello_world.rs"
+[[example]]
+name = "android_hello_world"
+path = "examples/macros/hello_world.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "image"
 path = "examples/macros/image.rs"
+[[example]]
+name = "android_image"
+path = "examples/macros/image.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "colors"
