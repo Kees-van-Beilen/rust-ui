@@ -1,4 +1,4 @@
-use std::{any::Any, cell::RefCell, collections::BTreeMap, fmt::Debug, rc::Rc};
+use std::{any::{Any, TypeId}, cell::RefCell, collections::BTreeMap, fmt::Debug, rc::Rc};
 
 ///
 /// PersistentStorage is used in mutable views during rendering. It is passed to the children, which can use their identity
@@ -12,7 +12,8 @@ use std::{any::Any, cell::RefCell, collections::BTreeMap, fmt::Debug, rc::Rc};
 ///
 #[derive(Default, Debug)]
 pub struct PersistentStorage {
-    map: BTreeMap<usize, Box<dyn Any>>,
+    map: BTreeMap<(usize,TypeId), Box<dyn Any>>,
+    
     /// views that want to register to the garbage collection
     /// this happens if a view needs to continue having focus between rerenders
     garbage_collection: BTreeMap<usize, GarbageCollectable>,
@@ -39,7 +40,7 @@ pub struct PersistentStorageRef {
 
 impl PersistentStorage {
     pub fn get<T: Any>(&self, identity: usize) -> Option<&T> {
-        self.map.get(&identity).and_then(|e| e.downcast_ref())
+        self.map.get(&(identity,TypeId::of::<T>())).and_then(|e| e.downcast_ref())
     }
     pub fn get_or_init_with<'a, T: Any>(
         &'a mut self,
@@ -72,7 +73,7 @@ impl PersistentStorage {
         self.get(identity).unwrap()
     }
     pub fn insert<T: Any>(&mut self, identity: usize, item: T) {
-        self.map.insert(identity, Box::new(item));
+        self.map.insert((identity,TypeId::of::<T>()), Box::new(item));
     }
 
     ///
