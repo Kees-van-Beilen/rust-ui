@@ -6,6 +6,7 @@ mod text;
 mod color;
 mod button;
 mod textfield;
+mod on_tap;
 pub mod image;
 
 pub fn delegate_set_size<T:AsRef<android2_android::view::View<'static>>+Any>(this:&T,to:crate::layout::Size<f64>){

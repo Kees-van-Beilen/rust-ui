@@ -1,5 +1,6 @@
 use std::{ffi::CStr, marker::PhantomData, mem, ops::Deref, ptr::null_mut};
 
+use android2_android::view::View;
 use jni::objects::JObject;
 
 use crate::native::ENV;
@@ -22,6 +23,11 @@ impl<A:AsRef<JObject<'static>>> Clone for Retained<A> {
         Self { global: self.global.clone(), __marker: self.__marker.clone() }
     }
 } 
+impl AsRef<View<'static>> for Retained<View<'static>> {
+    fn as_ref(&self) -> &View<'static> {
+        &self
+    }
+}
 
 // impl<'local,T:From<JObject<'local>>+AsRef<JObject<'static>>> Retained<T>  {
 //     pub fn new<'a,'jni>(this:T,env:&'a mut jni::JNIEnv<'jni>) -> Self{

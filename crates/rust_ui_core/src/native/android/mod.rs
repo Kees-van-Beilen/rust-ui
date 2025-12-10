@@ -31,7 +31,7 @@ pub mod native {
     use android2_android::{app::{Activity, Fragment}, content::{Context, ContextWrapper}, view::{ContextThemeWrapper, ViewGroup}};
     pub use jni;
     use jni::objects::JObject;
-    use std::{cell::RefCell, mem, rc::Rc};
+    use std::{any::type_name, cell::RefCell, mem, rc::Rc, thread};
 
 
     ///
@@ -48,10 +48,10 @@ pub mod native {
     }
 
     pub trait ActivityExtension {
-        fn context(&self)->&Context;
+        fn context(&self)->&Context<'_>;
     }
     impl<'jni> ActivityExtension for android2_android::app::Activity<'jni> {
-        fn context(&self)->&Context {
+        fn context(&self)->&Context<'_> {
             let a: &ContextThemeWrapper = self.as_ref();
             let b: &ContextWrapper = a.as_ref();
             b.as_ref()
@@ -103,6 +103,8 @@ pub mod native {
         fn rerender(&self) {
             let mut data = self.borrow_mut();
 
+            android_println!("trace/rerender {}",type_name::<V>());
+
             if let Some(k) = &mut data.get_mut_attached() {
                 let render_data = {
                     let mut b = k.borrow_mut();
@@ -152,6 +154,7 @@ pub mod native {
         type Output = Rc<RefCell<crate::native::MutableView>>;
 
         fn render(&self, data: crate::native::RenderData) -> Self::Output {
+            android_println!("trace/render {} on {:?}",type_name::<T>(),thread::current().id());
             // todo!()
             // let view = T::children(self.clone());
             // let parent = data.parent.clone();
@@ -185,6 +188,7 @@ pub mod native {
                 // this code will execute iff the something else is rerendering this view in the same
                 // frame that this view's state is updated.
                 // this happens when a view updates a binding and a state variable at the same time
+                android_println!("trace/clone_bindings {}",type_name::<T>());
                 self_container
                     .borrow()
                     .clone_bindings(&mut self.borrow_mut());
@@ -205,7 +209,11 @@ pub mod native {
                 .persistent_storage
                 .borrow_mut()
                 .garbage_collection_unset_all();
-            let r = T::children(self.clone()).render(new_data.clone());
+            android_println!("trace/render_children {} {:p}",type_name::<T>(),&new_data);
+            let c = T::children(self.clone());
+            android_println!("trace/got_children {}",type_name::<T>());
+            let r = c.render(new_data.clone());
+            android_println!("trace/finish_render_children {}",type_name::<T>());
             new_data
                 .persistent_storage
                 .borrow_mut()
@@ -236,7 +244,7 @@ pub mod native {
             } else {
                 *attached = Some(view.clone());
             }
-
+            android_println!("trace/finish_render {}",type_name::<T>());
             m.get_attached().clone().unwrap()
         }
         fn set_identity(self, identity: usize) -> Self {
@@ -298,7 +306,7 @@ pub mod native {
         // let empty_array = jni::objects::JObjectArray::default();
         // let rust_test_class_instance = constructor.new_instance(&empty_array, &mut env);
 
-        android_println!("start");
+        android_println!("start on {:?}",thread::current().id());
 
         let window = instance.get_window(&mut env);
         // let decor = window.get_decor_view(&mut env);
