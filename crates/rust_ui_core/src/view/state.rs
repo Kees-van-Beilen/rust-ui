@@ -68,7 +68,7 @@ impl<T> PartialBinding<T> {
     /// }
     /// ```
     pub fn get<'a>(&'a self) -> Ref<'a, T> {
-        self.data.borrow()
+        self.data.as_ref().unwrap().borrow()
     }
 
     ///
@@ -79,7 +79,7 @@ impl<T> PartialBinding<T> {
     #[doc(hidden)]
     pub fn as_binding<'a>(&'a self, queue: &'a BindingQueue<'a>) -> Binding<'a, T> {
         Binding {
-            data: &self.data,
+            data: &self.data.as_ref().unwrap(),
             updater: &self.updater.1,
             view: self.updater.0,
             queue: queue,
@@ -90,7 +90,7 @@ impl<T> PartialBinding<T> {
     /// might be used again
     #[allow(unused)]
     pub(crate) fn update_value(&self, value: T) {
-        self.data.replace(value);
+        self.data.as_ref().unwrap().replace(value);
         self.updater.1();
     }
 }
@@ -187,7 +187,7 @@ impl<T: Identifiable> PartialBinding<Vec<T>> {
             Box::new(RefMut::map(e.borrow_mut(), |e| e[*c].value_mut()))
         }
         FlexiblePartialBinding {
-            data: self.data.clone(),
+            data: self.data.as_ref().unwrap().clone(),
             capture: index,
             getter: getter::<T>,
             mut_getter: getter_mut::<T>,
@@ -245,11 +245,11 @@ impl<T: 'static> PartialAnyBinding<'_> for PartialBinding<T> {
     type Value = T;
 
     fn get(&self) -> Box<dyn Deref<Target = Self::Value> + '_> {
-        Box::new(self.data.borrow())
+        Box::new(self.data.as_ref().unwrap().borrow())
     }
 
     fn update_value(&self, value: Self::Value) {
-        *self.data.borrow_mut() = value;
+        *self.data.as_ref().unwrap().borrow_mut() = value;
     }
 
     fn clone_box(&self) -> PartialBindingBox<Self::Value> {
@@ -314,7 +314,7 @@ impl<'a: 'b, 'b, T, Out: 'b, OutMut: 'b, Capture> FlexibleBinding<'a, 'b, T, Out
 /// A partial binding is never mutable as otherwise ui code could trigger rerenders and cause a loop.
 ///
 pub struct PartialBinding<T> {
-    data: Rc<RefCell<T>>,
+    data: Option<Rc<RefCell<T>>>,
     updater: (*const u8, Rc<Box<dyn Fn()>>),
 }
 impl<T> Clone for PartialBinding<T> {
@@ -429,7 +429,7 @@ impl<T> PartialState<T> {
         view: Rc<RefCell<V>>,
     ) -> PartialBinding<T> {
         PartialBinding {
-            data: self.data.clone(),
+            data: Some(self.data.clone()),
             updater: (
                 Rc::as_ptr(&view) as *const u8,
                 Rc::new(Box::new(move || view.rerender())),
@@ -471,7 +471,7 @@ impl<T> Default for PartialBinding<T> {
         //This is horrible and should be removed as fast as possible
         //it is here as a patch for the `..Default::default()` behavior. However an assertion should happen at compile time for future versions of rust-ui
         Self {
-            data: unsafe { Rc::new_uninit().assume_init() },
+            data: None,
             updater: (0 as *const u8, Rc::new(Box::new(|| {}))),
         }
     }
