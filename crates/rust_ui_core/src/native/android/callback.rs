@@ -115,7 +115,7 @@ pub struct CallbackBlock<'local> {
 
 impl<'a> AsRef<android2_android::view::view::OnClickListener<'a>> for CallbackBlock<'a> {
     fn as_ref(&self) -> &android2_android::view::view::OnClickListener<'a> {
-        unsafe { mem::transmute(self) }
+        unsafe { mem::transmute::<&CallbackBlock,&android2_android::view::view::OnClickListener<'a>>(self) }
     }
 }
 
