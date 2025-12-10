@@ -10,8 +10,14 @@ use crate::derive_ui::{StructInfo, UIClassification};
 
 mod derive_ui;
 
+enum CrateType {
+    Bin,
+    Lib
+}
+
+
 fn manifest_android_main_activity() -> Option<String> {
-    dbg!(std::env::var("CARGO_MANIFEST_PATH"));
+    // dbg!(std::env::var("CARGO_MANIFEST_PATH"));
     let mut reader = BufReader::new(File::open(std::env::var("CARGO_MANIFEST_PATH").ok()?).ok()?);
     let mut buffer = String::new();
     reader.read_to_string(&mut buffer).unwrap(); //io error should be reflected in compile
@@ -114,6 +120,10 @@ fn write_main(out: &mut TokenStream, struct_info: &StructInfo) {
         "#[cfg(not(target_os = \"android\"))]",
     ));
     write_main_with(out,"main",TokenStream::new(),&vec![],struct_info);
+
+    out.extend(TokenStream::from_str(
+        "#[cfg(target_os = \"android\")] fn main(){/*boiler plate*/}",
+    ));
 }
 #[proc_macro_attribute]
 pub fn ui(attr: TokenStream, item: TokenStream) -> TokenStream {
