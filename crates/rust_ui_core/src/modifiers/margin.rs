@@ -15,6 +15,14 @@ impl Margin {
             right: 0.0,
         }
     }
+    pub const fn horizontal(value: f64) -> Self {
+        Self {
+            top: 0.0,
+            bottom: 0.0,
+            left: value,
+            right: value,
+        }
+    }
     pub const fn all(value: f64) -> Self {
         Self {
             top: value,

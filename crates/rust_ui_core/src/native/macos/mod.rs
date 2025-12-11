@@ -60,15 +60,13 @@ pub mod native {
 
     pub use super::image::*;
 
-    use std::{cell::RefCell, rc::Rc};
+    use std::{any::type_name, cell::RefCell, rc::Rc};
 
+    use bevy_color::Color;
     //views
-    use objc2::{DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
+    use objc2::{AnyThread, DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
     use objc2_app_kit::{
-        NSApplication, NSApplicationActivationPolicy, NSFontWeight, NSFontWeightBlack,
-        NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight, NSFontWeightMedium,
-        NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin, NSFontWeightUltraLight,
-        NSTextAlignment, NSTextField, NSView,
+        NSApplication, NSApplicationActivationPolicy, NSColor, NSFontWeight, NSFontWeightBlack, NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight, NSFontWeightMedium, NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin, NSFontWeightUltraLight, NSTextAlignment, NSTextField, NSView
     };
     use objc2_core_graphics::CGColor;
     use objc2_foundation::{NSPoint, NSString};
@@ -81,7 +79,7 @@ pub mod native {
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
         },
-        views::{FontFamily, FontSize, FontWeight, TextAlignment},
+        views::{FontFamily, FontSize, FontWeight, ForegroundColor, TextAlignment},
     };
 
     use super::{NSViewRepresentable, app::Delegate, button::RustButton};
@@ -149,6 +147,7 @@ pub mod native {
                 // this code will execute iff the something else is rerendering this view in the same
                 // frame that this view's state is updated.
                 // this happens when a view updates a binding and a state variable at the same time
+                println!("trace/clone_bindings {}",type_name::<T>());
                 self_container
                     .borrow()
                     .clone_bindings(&mut self.borrow_mut());
@@ -323,6 +322,16 @@ pub mod native {
                     .get_resource::<TextAlignment>()
                     .copied()
                     .unwrap_or(TextAlignment::Center);
+
+                let foreground_color = data
+                    .stack
+                    .get_resource::<ForegroundColor>()
+                    .copied()
+                    .unwrap_or(ForegroundColor(Color::BLACK));
+                let v = foreground_color.0.to_srgba();
+                let cg_color = CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
+                let a = NSColor::colorWithCGColor(&cg_color);
+                view.setTextColor(a.as_ref().map(|v| &**v));
                 match font_family {
                     FontFamily::SystemUI => {
                         let font = NSFont::systemFontOfSize_weight(

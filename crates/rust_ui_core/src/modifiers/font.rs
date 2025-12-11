@@ -1,7 +1,9 @@
+use bevy_color::Color;
+
 use crate::{
     layout::{ComputableLayout, RenderObject, Size},
     prelude::{FontFamily, FontSize, FontWeight},
-    views::TextAlignment,
+    views::{ForegroundColor, TextAlignment},
 };
 
 #[derive(Clone)]
@@ -10,12 +12,16 @@ pub enum FontResource {
     Weight(FontWeight),
     Family(FontFamily),
     Align(TextAlignment),
+    Color(ForegroundColor),
 }
 
 pub struct FontResourceView<Child: RenderObject>(Child, FontResource);
 pub struct RenderedFontResourceView<Child: ComputableLayout>(Child);
 
 pub trait FontResourceModifier: Sized + RenderObject {
+    fn foreground_color(self, color: bevy_color::Color) -> FontResourceView<Self> {
+        FontResourceView(self, FontResource::Color(ForegroundColor(color)))
+    }
     fn with_font_size(self, size: f64) -> FontResourceView<Self> {
         FontResourceView(self, FontResource::Size(FontSize(size)))
     }
@@ -52,6 +58,11 @@ impl<T: RenderObject> RenderObject for FontResourceView<T> {
             FontResource::Align(text_alignment) => data.ament_with(text_alignment.clone(), |adp| {
                 RenderedFontResourceView(self.0.render(adp))
             }),
+            FontResource::Color(foreground_color) => {
+                data.ament_with(foreground_color.clone(), |adp|{
+                    RenderedFontResourceView(self.0.render(adp))
+                })
+            },
         }
     }
 }

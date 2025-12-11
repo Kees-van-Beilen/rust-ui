@@ -55,6 +55,9 @@ pub enum FontFamily {
     Custom(Rc<str>),
 }
 
+#[derive(Clone, Copy, Debug,PartialEq)]
+pub struct ForegroundColor(pub bevy_color::Color);
+
 /// The font size to use for text elements.
 #[derive(Clone, Copy, Debug,PartialEq)]
 pub struct FontSize(pub f64);
@@ -67,6 +70,7 @@ impl_resource!(FontSize);
 impl_resource!(FontWeight);
 impl_resource!(FontFamily);
 impl_resource!(TextAlignment);
+impl_resource!(ForegroundColor);
 
 ///
 /// This is a wrapper around a native text view. You may use modifiers to change text properties such as FontWeight or FontSize.
