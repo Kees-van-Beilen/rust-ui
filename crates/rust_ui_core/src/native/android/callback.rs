@@ -8,6 +8,7 @@ const CLASSES:&[u8] = include_bytes!("./classes.dex");
 
 thread_local! {
     static CALLBACK_CONSTRUCTOR: OnceCell<Retained<android2_java::lang::reflect::Constructor<'static>>> = OnceCell::new();
+    static CALLBACK_ON_DISMISS_CONSTRUCTOR: OnceCell<Retained<android2_java::lang::reflect::Constructor<'static>>> = OnceCell::new();
     static TEXT_WATCHER_CONSTRUCTOR: OnceCell<Retained<android2_java::lang::reflect::Constructor<'static>>> = OnceCell::new();
 }
 
@@ -49,6 +50,16 @@ pub fn init_callback_class<'jni,'a:'jni>(mut env:&mut jni::JNIEnv<'jni>)->Retain
     ])
 }
 
+pub fn init_on_dismiss<'jni,'a:'jni>(mut env:&mut jni::JNIEnv<'jni>)->Retained<android2_java::lang::reflect::Constructor<'static>>{
+    get_constructor(env,"RustUIOnDismiss",&[
+        jni::NativeMethod {
+            name: "onDismiss".into(),
+            sig: "(Landroid/content/DialogInterface;)V".into(),
+            fn_ptr: native_callback_on_dismiss as *mut std::ffi::c_void,
+        }
+    ])
+}
+
 pub fn init_text_watcher_class<'jni,'a:'jni>(mut env:&mut jni::JNIEnv<'jni>)->Retained<android2_java::lang::reflect::Constructor<'static>>{
     get_constructor(env,"RustUITextWatcher",&[
         jni::NativeMethod {
@@ -86,6 +97,27 @@ pub extern "system" fn text_change<'jni>(
     android_println!("this being called is bad lol:{:p}",&env);
 }
 
+pub extern "system" fn native_callback_on_dismiss<'jni>(
+    mut env:jni::JNIEnv<'jni>,
+    instance:jni::objects::JObject<'jni>,
+    dialog_interface:android2_android::content::DialogInterface<'jni>
+) {
+    let env_clone = unsafe { env.unsafe_clone() };
+    // unsafe {
+    //     let context = view.get_context(&mut env);
+    //     ACTIVITY = mem::transmute(context);
+    // }
+    // android_println!("sdf:{:?}",env.find_class("test"));
+    let callback: std::sync::MutexGuard<'_, Box<dyn Fn(jni::JNIEnv)+Send>> = unsafe { env.get_rust_field(&instance, "rawFunctionBox").unwrap() };
+    with_env(env_clone, |env|{callback(env)});
+
+    // callback(env_clone);
+    // drop(callback);
+    // android_println!("sdf:{:p}",&env);
+    // android_println!("{:p}",&env_clone);
+
+}
+
 pub extern "system" fn native_callback<'jni>(
     mut env:jni::JNIEnv<'jni>,
     instance:jni::objects::JObject<'jni>,
@@ -119,7 +151,40 @@ impl<'a> AsRef<android2_android::view::view::OnClickListener<'a>> for CallbackBl
     }
 }
 
+#[repr(transparent)]
+pub struct CallbackBlockOnDismiss<'local> {
+    //Because this data lives on the java side, we have an explicit destructor
+    inner:android2_java::lang::Object<'local>
+}
+impl<'a> AsRef<android2_android::content::dialog_interface::OnDismissListener<'a>> for CallbackBlockOnDismiss<'a> {
+    fn as_ref(&self) -> &android2_android::content::dialog_interface::OnDismissListener<'a> {
+        unsafe { mem::transmute::<&CallbackBlockOnDismiss,&android2_android::content::dialog_interface::OnDismissListener<'a>>(self) }
+    }
+}
+
+impl<'local> CallbackBlockOnDismiss<'local> {
+    pub fn new<'jni:'local>(env:&mut jni::JNIEnv<'jni>,callback:impl Fn(jni::JNIEnv)+'static)->Self{
+        CALLBACK_ON_DISMISS_CONSTRUCTOR.with(|constructor|{
+            let constructor = constructor.get_or_init(||init_on_dismiss(env));
+            let empty_array = jni::objects::JObjectArray::default();
+            let instance = constructor.new_instance(&empty_array, env);
+            unsafe { 
+                let boxed: Box<dyn Fn(jni::JNIEnv<'_>) + 'static> = Box::new(callback);
+                // SAFETY:
+                // Android runs on a single thread, or at least I hope 🙏
+                // There should be a better less error prone way of doing this.
+                let fake_box:Box<dyn Fn(jni::JNIEnv) +Send +'static  > = mem::transmute(boxed);
+                env.set_rust_field(&instance, "rawFunctionBox", fake_box).unwrap();
+            };
+            Self {
+                inner:instance
+            }
+        })
+    }
+}
 impl<'local> CallbackBlock<'local> {
+
+    
     pub fn new<'jni:'local>(env:&mut jni::JNIEnv<'jni>,callback:impl Fn(jni::JNIEnv)+'static)->Self{
         CALLBACK_CONSTRUCTOR.with(|constructor|{
             let constructor = constructor.get_or_init(||init_callback_class(env));

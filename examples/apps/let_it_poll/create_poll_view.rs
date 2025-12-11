@@ -30,6 +30,7 @@ pub struct CreatePollView {
                 Spacer().frame(Frame::no_preference().width(15.0))
                 TextField(bind!(poll_name))
                     .set_identity(10000)
+                    .frame(Frame::no_preference())
             }
             PollOptionsView {
                 fields:bind!(field_names)

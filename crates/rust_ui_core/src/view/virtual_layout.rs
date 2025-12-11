@@ -178,6 +178,7 @@ macro_rules! virtual_layout {
             type Output = $rendered<T::RenderOutput>;
 
             fn render(&self, data: crate::native::RenderData) -> Self::Output {
+                // crate::android_println!("(virtual)trace/render {}",std::any::type_name::<$name<T>>());
                 $rendered {
                     data: $data {
                         $($field : self.$field),+,

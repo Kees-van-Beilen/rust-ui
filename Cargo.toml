@@ -46,15 +46,27 @@ rust_ui_macro = {path = "crates/rust_ui_macro"}
 [[example]]
 name = "let_it_poll"
 path = "examples/apps/let_it_poll/main.rs"
+[[example]]
+name = "android_let_it_poll"
+path = "examples/apps/let_it_poll/main.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "calculator"
 path = "examples/macros/apps/calculator.rs"
+[[example]]
+name = "android_calculator"
+path = "examples/macros/apps/calculator.rs"
+crate-type = ["cdylib"]
 
 
 [[example]]
 name = "for_loop"
 path = "examples/macros/for_loop.rs"
+[[example]]
+name = "android_for_loop"
+path = "examples/macros/for_loop.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "hello_world"

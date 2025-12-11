@@ -2,6 +2,7 @@ use std::cell::RefCell;
 
 pub mod helper;
 pub mod callback;
+pub mod class_loader;
 mod views;
 
 

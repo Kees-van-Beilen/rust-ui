@@ -11,6 +11,7 @@ impl RenderObject for crate::views::Text {
     fn render(&self, mut data: crate::native::RenderData) -> Self::Output {
         let env = &mut data.jni;
         let view = TextView::new_0(data.instance.context(), env);
+        // view.set_line_break_style(arg0, env);
         // let str = jni::strings::JNIString::from(self.content);
         let str = env.new_string(&self.content).unwrap();
         let str:android2_java::lang::String = unsafe { mem::transmute(str) };
@@ -41,14 +42,30 @@ pub struct NativeTextView(Retained<TextView<'static>>);
 impl ComputableLayout for NativeTextView {
 
 
-    fn preferred_size(&self, _in_frame: &crate::prelude::Size<f64>) -> crate::prelude::Size<Option<f64>> {
-        android_println!("|>start {}",type_name::<Self>());
+    fn preferred_size(&self, in_frame: &crate::prelude::Size<f64>) -> crate::prelude::Size<Option<f64>> {
+        android_println!("|>start {} {:?}",type_name::<Self>(),in_frame);
         let env = unsafe { get_env() };
         let view:&View = self.0.as_ref();
-        view.measure(0, 0, env);
+        /*
+        private static final int MODE_SHIFT = 30;
+        private static final int MODE_MASK  = 0x3 << MODE_SHIFT;
+         public static final int AT_MOST     = 2 << MODE_SHIFT;
+        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 << MeasureSpec.MODE_SHIFT) - 1) int size,
+                                          @MeasureSpecMode int mode) {
+            if (sUseBrokenMakeMeasureSpec) {
+                return size + mode;
+            } else {
+                return (size & ~MODE_MASK) | (mode & MODE_MASK);
+            }
+        }
+
+         */
+        let max_width:i32 = (in_frame.width as i32) & !(0x3<<30) | ((2<<30)&(0x3<<30));
+        let max_height:i32 = (in_frame.height as i32) & !(0x3<<30) | ((2<<30)&(0x3<<30));
+        view.measure(max_width,max_height, env);
         let height = view.get_measured_height(env);
         let width = view.get_measured_width(env);
-        android_println!("|>end");
+        android_println!("|>end {} {width} {height}",type_name::<Self>());
         Size {
             width: Some(width as f64),
             height: Some(height as f64),

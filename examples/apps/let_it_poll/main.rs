@@ -66,7 +66,7 @@ struct OverviewView {
                     CreatePollView{
                         polls:bind!(polls),
                         shown:bind!(show_create_poll_sheet)
-                    }
+                    }.frame(Frame::no_preference().height(700.0))
                 }
             }
             ScrollView {
@@ -233,13 +233,12 @@ struct OverviewPollView {
 struct WelcomeScreen {
     #[binding] global:GlobalState,
     body:_ = view!{
-        HStack {
-            Spacer()
+
             VStack {
                 spacing:Some(10.0),
                 Spacer()
                         ImageView("assets/demo/let_it_poll.png")
-                        .frame(Frame::no_preference().height(100.0))
+                        .frame(Frame::no_preference())
                         Text("Welcome to Let It Poll! In this app you can create whatever poll you want, and share them with friends. Excited? no? it is just an example app, calm down.")
                             .align(TextAlignment::Leading)
                         Button("Continue") || {
@@ -247,9 +246,8 @@ struct WelcomeScreen {
                         }
                 Spacer()
                     
-            }.frame(Frame::no_preference().width(300.0)).margin(Margin::all(12.0))
-            Spacer()
-        }
+            }.margin(Margin::all(50.0))
+        // }
         
     }
 }

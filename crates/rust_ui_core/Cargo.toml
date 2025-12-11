@@ -51,7 +51,11 @@ features = [
     "java.io.InputStream",
     "java.lang.CharSequence",
     "java.lang.Object",
-    "java.lang.String"
+    "java.lang.String",
+    "java.lang.ClassLoader",
+    "android.app.Dialog",
+    "android.content.DialogInterface",
+    "android.content.DialogInterface.OnDismissListener"
 ]
 [target.'cfg(target_os = "android")'.dependencies.android2_java]
 git = "https://codeberg.org/kees-van-beilen/android2.git"
@@ -64,7 +68,7 @@ features = [
     "java.lang.ClassLoader",
     "java.nio.ByteBuffer",
     "java.io.InputStream",
-    "java.lang.reflect.Constructor"
+    "java.lang.reflect.Constructor",
 ]
 
 [target.'cfg(target_os = "android")'.dependencies.android2_dalvik]
