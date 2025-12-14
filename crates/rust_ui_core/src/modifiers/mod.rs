@@ -5,6 +5,7 @@ pub mod frame;
 pub mod margin;
 pub mod on_tap;
 pub mod sheet;
+pub mod on_appear;
 
 pub use background::BackgroundModifier;
 pub use boxed::BoxedModifier;
@@ -13,3 +14,4 @@ pub use frame::{Frame, FrameModifier};
 pub use margin::{Margin, MarginModifier};
 pub use on_tap::OnTapModifier;
 pub use sheet::SheetModifier;
+pub use on_appear::OnAppearModifier;

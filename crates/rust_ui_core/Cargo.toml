@@ -92,6 +92,7 @@ objc2-app-kit = "0.3.0"
 objc2-core-graphics = "0.3.0"
 objc2-foundation = "0.3.0"
 objc2-quartz-core = "0.3.0"
+dispatch2 = "0.3.0"
 
 [target.'cfg(target_os = "ios")'.dependencies]
 block2 = "0.6.1"
@@ -101,3 +102,4 @@ objc2-foundation = "0.3.0"
 objc2-quartz-core = "0.3.0"
 objc2-ui-kit = "0.3.1"
 objc2-os-log = "0.3.1"
+dispatch2 = "0.3.0"

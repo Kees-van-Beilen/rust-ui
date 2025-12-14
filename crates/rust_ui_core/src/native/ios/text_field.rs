@@ -5,9 +5,7 @@ use objc2_foundation::{NSNotification, NSPoint, NSString};
 use objc2_ui_kit::{UIControlEvents, UITextField, UITextFieldDelegate};
 
 use crate::{
-    layout::{ComputableLayout, RenderObject},
-    view::state::PartialBindingBox,
-    views::TextField,
+    layout::{ComputableLayout, RenderObject}, native::ios::order_view_in_front, view::state::PartialBindingBox, views::TextField
 };
 
 pub struct RustTextFieldIVars {
@@ -90,6 +88,7 @@ impl RenderObject for TextField {
                 let _ = view;
                 let str = NSString::from_str(self.text_binding.get().as_str());
                 ns_view.setText(Some(&str));
+                order_view_in_front(&ns_view);
                 NativeTextField { ns_view }
             } else {
                 let mtm = MainThreadMarker::new().unwrap();
@@ -106,6 +105,7 @@ impl RenderObject for TextField {
                         });
                 }
                 data.real_parent.addSubview(&ns_view);
+
                 data.persistent_storage
                     .borrow_mut()
                     .insert(identity, ns_view.clone());

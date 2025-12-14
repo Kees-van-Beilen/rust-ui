@@ -6,9 +6,11 @@ mod scroll_view;
 mod sheet;
 mod text_field;
 
+use std::{os::raw::c_void, ptr::NonNull};
+
 use crate::{icon::Icon, layout::ComputableLayout};
 use objc2::rc::Retained;
-use objc2_foundation::NSString;
+use objc2_foundation::{NSComparisonResult, NSString};
 use objc2_ui_kit::{UIImage, UIView};
 
 //all nsview reps auto participate in the layout manager
@@ -47,7 +49,18 @@ impl Into<Retained<UIImage>> for Icon {
     }
 }
 
+pub fn order_view_in_front(view:&UIView){
+    let super_view = unsafe { view.superview() }.unwrap();
+    unsafe {
+        super_view.bringSubviewToFront(view);
+    }
+}
+
 pub mod native {
+
+    pub use crate::native::apple_shared::create_task_flush;
+
+
     pub use super::image::*;
     use super::{
         UIViewRepresentable,
@@ -61,10 +74,11 @@ pub mod native {
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
         },
-        views::{FontFamily, FontSize, FontWeight, TextAlignment, tabbar::RenderedTabData},
+        views::{FontFamily, FontSize, FontWeight, ForegroundColor, TextAlignment, tabbar::RenderedTabData},
     };
+    use bevy_color::Color;
     use block2::RcBlock;
-    use objc2::{ClassType, MainThreadMarker, MainThreadOnly, rc::Retained};
+    use objc2::{ClassType, MainThreadMarker, MainThreadOnly, msg_send, rc::Retained};
     use objc2_core_graphics::{CGColor, CGRectZero};
     use objc2_foundation::{NSArray, NSBundle, NSFileManager, NSString};
     use objc2_ui_kit::{
@@ -72,7 +86,7 @@ pub mod native {
         UIControlState, UIFontWeight, UIFontWeightBlack, UIFontWeightBold, UIFontWeightHeavy,
         UIFontWeightLight, UIFontWeightMedium, UIFontWeightRegular, UIFontWeightSemibold,
         UIFontWeightThin, UIFontWeightUltraLight, UIImage, UILabel, UITab, UITabBarController,
-        UIView, UIViewController,
+        UIView, UIViewController, UIWindow,
     };
     use std::{cell::RefCell, ptr::NonNull, rc::Rc};
 
@@ -158,15 +172,31 @@ pub mod native {
             let mut resume_storage = true;
             // let mut did_swap = false;
             // let mut did_try_swap = false;
+            // let (res, storage, self_container) =
+            //     borrow.get_or_init_with::<Store<T>>(identity, || {
+            //         resume_storage = false;
+            //         (
+            //             data.stack.as_ref().clone(),
+            //             PersistentStorageRef::default(),
+            //             self.clone(),
+            //         )
+            //     });
+
             let (res, storage, self_container) =
-                borrow.get_or_init_with::<Store<T>>(identity, || {
+                borrow.get_or_register_gc::<Store<T>,_>(identity, || {
                     resume_storage = false;
-                    (
+                    let ps = PersistentStorageRef::default();
+                    ((
                         data.stack.as_ref().clone(),
-                        PersistentStorageRef::default(),
+                        ps.clone(),
                         self.clone(),
-                    )
+                    ),move||{
+                        let mut bm = ps.borrow_mut();
+                        bm.garbage_collection_unset_all();
+                        bm.garbage_collection_cycle();
+                    })
                 });
+
 
             //we need to copy the state from the last
             if !Rc::ptr_eq(self, self_container) {
@@ -324,6 +354,16 @@ pub mod native {
                     .get_resource::<FontWeight>()
                     .copied()
                     .unwrap_or(FontWeight::Regular);
+                let color = data
+                    .stack
+                    .get_resource::<ForegroundColor>()
+                    .copied()
+                    .unwrap_or(ForegroundColor(Color::BLACK));
+                let v = color.0.to_linear();
+                let color =
+                    UIColor::colorWithRed_green_blue_alpha(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
+                    // UIColor::colorWithRed_green_blue_alpha(red, green, blue, alpha)
+                view.setTextColor(Some(&color));
                 match font_family {
                     FontFamily::SystemUI => {
                         let font = UIFont::systemFontOfSize_weight(
@@ -525,6 +565,29 @@ pub mod native {
             let path = NSBundle::mainBundle().bundlePath();
             default_file_manager.changeCurrentDirectoryPath(&path);
         }
+
+        std::panic::set_hook(Box::new(|info|{
+            let panic = info.to_string();
+            dispatch2::run_on_main(move |mtm|{
+                let alert = unsafe { objc2_ui_kit::UIAlertController::new(mtm) };
+                let title = objc2_foundation::ns_string!("Rust panic");
+                unsafe { alert.setTitle(Some(&title)) };
+                // let msg = info.payload_as_str().unwrap();
+                let body = objc2_foundation::NSString::from_str(&panic);
+                unsafe { alert.setMessage(Some(&body)) };
+                
+                let main_window: &UIWindow = unsafe {
+                    msg_send![
+                        &UIApplication::sharedApplication(mtm).delegate().unwrap(),
+                        bridge_window
+                    ]
+                };
+
+                let vc = main_window.rootViewController().unwrap();
+                unsafe { vc.presentViewController_animated_completion(&alert, false, None) };
+
+            })
+        }));
 
         let mtm = MainThreadMarker::new().unwrap();
         //this is required to register the class

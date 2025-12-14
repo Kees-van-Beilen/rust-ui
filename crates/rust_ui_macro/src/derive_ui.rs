@@ -278,7 +278,7 @@ fn translate_rust_ui_close_with_data(
         let mut s = TokenStream::from_str("let data = data.clone(); move").unwrap();
         s.extend(outer_function);
         s.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
-                                let mut s = TokenStream::from_str("let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
+                                let mut s = TokenStream::from_str("let ref_data = &data;let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
                                 let mut sub = TokenStream::new();
                                 sub.extend(data_ref_unpack.clone());
                                 // sub.extend(TokenStream::from_str("let res = ").unwrap());
@@ -1485,7 +1485,7 @@ fn gen_effect_macro(data_ref_unpack: &TokenStream) -> TokenStream {
                 let mut s = TokenStream::new();
                 s.extend(TokenStream::from_str("let data = data.clone(); move |$($arg : $t),+|"));
                 s.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
-                    let mut s = TokenStream::from_str("let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
+                    let mut s = TokenStream::from_str("let ref_data = &data;let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
                     let mut sub = TokenStream::new();
                     sub.extend(data_ref_unpack.clone());
 

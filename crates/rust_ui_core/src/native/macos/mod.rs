@@ -8,9 +8,14 @@ mod scrollview;
 mod sheet;
 mod text_field;
 
-use crate::layout::ComputableLayout;
-use objc2_app_kit::NSView;
-use objc2_foundation::NSPoint;
+use std::{os::raw::c_void, ptr::NonNull};
+
+use crate::{layout::ComputableLayout, view::resources::ResourceStack, views::ForegroundColor};
+use bevy_color::Color;
+use objc2::rc::Retained;
+use objc2_app_kit::{NSColor, NSView};
+use objc2_core_graphics::CGColor;
+use objc2_foundation::{NSComparisonResult, NSPoint};
 
 //all nsview reps auto participate in the layout manager
 //todo: this file should be split up
@@ -55,8 +60,40 @@ pub(crate) fn nsview_setposition(view: &NSView, to: crate::layout::Position<f64>
     unsafe { view.setFrameOrigin(NSPoint { x: to.x, y: y }) };
 }
 
+pub fn get_foreground_color(stack:&ResourceStack)->Retained<NSColor>{
+    let foreground_color = stack
+                    .get_resource::<ForegroundColor>()
+                    .copied()
+                    .unwrap_or(ForegroundColor(Color::BLACK));
+                let v = foreground_color.0.to_srgba();
+                let cg_color = unsafe { CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64) };
+                let a = unsafe { NSColor::colorWithCGColor(&cg_color) };
+    a.unwrap()
+}
+
+
+pub fn order_view_in_front(ns_view:&NSView){
+    let super_view = unsafe { ns_view.superview() }.unwrap();
+                // ns_view.removeFromSuperviewWithoutNeedingDisplay();
+
+    unsafe extern "C-unwind" fn comp(a:NonNull<NSView>,b:NonNull<NSView>,c:*mut c_void) -> NSComparisonResult {
+        if c == a.as_ptr() as _ {
+            NSComparisonResult::Descending
+        }else if c == b.as_ptr() as _ {
+            NSComparisonResult::Ascending
+        }else{
+            NSComparisonResult::Same
+        }
+    }
+    unsafe {
+        super_view.sortSubviewsUsingFunction_context(comp, &*ns_view as *const _ as _);
+    }
+}
+
 pub mod native {
     // use std::rc::Weak;
+
+    pub use crate::native::apple_shared::create_task_flush;
 
     pub use super::image::*;
 
@@ -132,15 +169,22 @@ pub mod native {
             let mut resume_storage = true;
             // let mut did_swap = false;
             // let mut did_try_swap = false;
+
             let (res, storage, self_container) =
-                borrow.get_or_init_with::<Store<T>>(identity, || {
+                borrow.get_or_register_gc::<Store<T>,_>(identity, || {
                     resume_storage = false;
-                    (
+                    let ps = PersistentStorageRef::default();
+                    ((
                         data.stack.as_ref().clone(),
-                        PersistentStorageRef::default(),
+                        ps.clone(),
                         self.clone(),
-                    )
+                    ),move||{
+                        let mut bm = ps.borrow_mut();
+                        bm.garbage_collection_unset_all();
+                        bm.garbage_collection_cycle();
+                    })
                 });
+
 
             //we need to copy the state from the last
             if !Rc::ptr_eq(self, self_container) {
@@ -158,6 +202,7 @@ pub mod native {
                 stack: ResourceStack::Owned(res.clone()),
                 persistent_storage: storage.clone(),
             };
+            borrow.garbage_collection_mark_used(identity);
             drop(borrow);
 
             new_data
@@ -280,6 +325,8 @@ pub mod native {
                 let cb = self.callback.replace(Box::new(|| panic!()));
                 let view = RustButton::new(mtm, cb);
                 let str = NSString::from_str(&self.label);
+                let color = super::get_foreground_color(&data.stack);
+                view.setContentTintColor(Some(&color));
                 // view.setStringValue(&str);
                 view.setTitle(&str);
                 // view.setBezelStyle(NSBezelStyle::Te);

@@ -5,3 +5,4 @@ pub mod persistent_storage;
 pub mod resources;
 pub mod state;
 pub mod virtual_layout;
+pub mod task;

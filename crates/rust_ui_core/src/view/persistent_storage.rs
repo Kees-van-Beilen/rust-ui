@@ -13,7 +13,6 @@ use std::{any::{Any, TypeId}, cell::RefCell, collections::BTreeMap, fmt::Debug, 
 #[derive(Default, Debug)]
 pub struct PersistentStorage {
     map: BTreeMap<(usize,TypeId), Box<dyn Any>>,
-    
     /// views that want to register to the garbage collection
     /// this happens if a view needs to continue having focus between rerenders
     garbage_collection: BTreeMap<usize, GarbageCollectable>,
@@ -102,6 +101,7 @@ impl PersistentStorage {
         for value in self.garbage_collection.values_mut() {
             value.flagged_to_keep = false;
         }
+        // for (key,value) in self.
     }
     pub fn garbage_collection_cycle(&mut self) {
         let removals: Vec<usize> = self
@@ -114,6 +114,13 @@ impl PersistentStorage {
             let entry = self.garbage_collection.remove(identity).unwrap();
             (entry.remove_fn)();
         }
+    }
+    pub fn sub_stores_mut(&mut self){
+        // for key in self.sub_stores.iter() {
+        //     if let Some(store) = self.map.get_mut(key) {
+        //         store.dow
+        //     }
+        // }
     }
 }
 impl PersistentStorageRef {

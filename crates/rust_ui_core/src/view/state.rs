@@ -1,10 +1,6 @@
 use crate::view::mutable::MutableViewRerender;
 use std::{
-    cell::{Cell, Ref, RefCell, RefMut},
-    collections::BTreeMap,
-    fmt::Display,
-    ops::{Deref, DerefMut},
-    rc::Rc,
+    any::type_name, cell::{Cell, Ref, RefCell, RefMut}, collections::BTreeMap, fmt::Display, ops::{Deref, DerefMut}, rc::Rc
 };
 
 /*
@@ -250,6 +246,7 @@ impl<T: 'static> PartialAnyBinding<'_> for PartialBinding<T> {
 
     fn update_value(&self, value: Self::Value) {
         *self.data.as_ref().unwrap().borrow_mut() = value;
+        self.updater.1();
     }
 
     fn clone_box(&self) -> PartialBindingBox<Self::Value> {
@@ -319,6 +316,7 @@ pub struct PartialBinding<T> {
 }
 impl<T> Clone for PartialBinding<T> {
     fn clone(&self) -> Self {
+
         Self {
             data: self.data.clone(),
             updater: self.updater.clone(),
@@ -470,6 +468,7 @@ impl<T> Default for PartialBinding<T> {
     fn default() -> Self {
         //This is horrible and should be removed as fast as possible
         //it is here as a patch for the `..Default::default()` behavior. However an assertion should happen at compile time for future versions of rust-ui
+        eprintln!("created default binding with T={}, This undesired but unavoidable, just so you know ;)",type_name::<T>());
         Self {
             data: None,
             updater: (0 as *const u8, Rc::new(Box::new(|| {}))),

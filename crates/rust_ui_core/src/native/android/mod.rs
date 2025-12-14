@@ -11,6 +11,11 @@ mod views;
 
 
 pub mod native {
+
+    pub fn create_task(env:&mut JNIEnv){
+        let vm = env.get_java_vm().unwrap();
+        vm.attach_current_thread()
+    }
     //global env was a bad idea. but I don't see any other way.
     //the idea is that whenever java calls back into native, we update the env.
     // thread_local! {
@@ -31,7 +36,7 @@ pub mod native {
     // pub use crate::native::android::ENV;
     use android2_android::{app::{Activity, Fragment}, content::{Context, ContextWrapper}, view::{ContextThemeWrapper, ViewGroup}};
     pub use jni;
-    use jni::objects::JObject;
+    use jni::{JNIEnv, objects::JObject};
     use std::{any::type_name, cell::RefCell, mem, rc::Rc, thread};
 
 
