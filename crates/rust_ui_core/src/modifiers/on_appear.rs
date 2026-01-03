@@ -38,7 +38,6 @@ impl<T: RenderObject> RenderObject for OnAppearView<T> {
         if let Some(identity) = self.identity {
             let _ = data.persistent_storage.borrow_mut().get_or_init_with(identity, ||{
                 (self.callback.borrow())();
-                println!("asdffds on_appear");
                 true;
             });
             

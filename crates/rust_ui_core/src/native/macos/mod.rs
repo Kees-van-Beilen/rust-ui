@@ -7,7 +7,7 @@ mod image;
 mod scrollview;
 mod sheet;
 mod text_field;
-
+mod multiline_text_editor;
 use std::{os::raw::c_void, ptr::NonNull};
 
 use crate::{layout::ComputableLayout, view::resources::ResourceStack, views::ForegroundColor};

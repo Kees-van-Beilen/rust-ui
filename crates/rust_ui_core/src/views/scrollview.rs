@@ -11,6 +11,21 @@ pub struct Axis {
     pub x: ScrollBehavior,
     pub y: ScrollBehavior,
 }
+
+impl Axis {
+    pub fn scroll_vertical()->Self{
+        Self {
+            x: ScrollBehavior::NoScroll,
+            y: ScrollBehavior::Scroll,
+        }
+    }
+    pub fn scroll_horizontal()->Self{
+        Self {
+            x: ScrollBehavior::Scroll,
+            y: ScrollBehavior::NoScroll,
+        }
+    }
+}
 /// ScrollViews automatically take as much room as needed
 /// i.e. they don't have a preferred size
 pub struct ScrollView<Child: RenderObject> {

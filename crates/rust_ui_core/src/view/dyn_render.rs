@@ -1,3 +1,5 @@
+use clone_dyn::dependency::clone_dyn_meta;
+
 use crate::{
     layout::{ComputableLayout, Position, RenderObject, Size},
     native::RenderData,
@@ -5,10 +7,12 @@ use crate::{
 
 pub struct DynGroup(Box<dyn DynRender>);
 pub struct DynRendered(Box<dyn ComputableLayout>);
+
+#[ clone_dyn_meta::clone_dyn ]
 pub trait DynRender {
     fn render_dyn(&self, data: RenderData) -> Box<dyn ComputableLayout>;
 }
-impl<T: RenderObject> DynRender for T
+impl<T: RenderObject+Clone> DynRender for T
 where
     <T as RenderObject>::Output: 'static,
 {
@@ -17,10 +21,24 @@ where
     }
 }
 impl DynGroup {
-    pub fn new<T: RenderObject + 'static>(obj: T) -> Self {
+    pub fn new<T: RenderObject+Clone + 'static>(obj: T) -> Self {
         DynGroup(Box::new(obj))
     }
+    pub fn cloned(&self)->Self{
+        let b = clone_dyn::clone(&self.0);
+        Self(b)
+        
+    }
 }
+
+pub struct DynInstance;
+
+impl DynInstance {
+    pub fn new(obj: &DynGroup) -> DynGroup {
+        obj.cloned()
+    }
+}
+
 impl ComputableLayout for DynRendered {
     fn preferred_size(&self, in_frame: &Size<f64>) -> Size<Option<f64>> {
         self.0.preferred_size(in_frame)

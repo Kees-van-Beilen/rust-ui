@@ -108,6 +108,7 @@ impl RenderObject for TextField {
                 let color = get_foreground_color(&data.stack);
                 let ns_view = RustTextField::new(mtm, self.text_binding.clone_box());
                 ns_view.setTextColor(Some(&color));
+                ns_view.setMaximumNumberOfLines(0);
                 let str = NSString::from_str(self.text_binding.get().as_str());
                 ns_view.setStringValue(&str);
                 {

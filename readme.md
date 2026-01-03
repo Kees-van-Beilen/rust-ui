@@ -7,11 +7,13 @@
 </p>
 
 
-<center>
-
-[Documentation](https://rust-ui.inpolen.nl/doc/) • [The `rust-ui` Book](https://rust-ui.inpolen.nl/book/) 
-
-</center>
+<p align="center">
+<a href="https://rust-ui.inpolen.nl/doc/">Documentation</a>
+• 
+<a href="https://rust-ui.inpolen.nl/book/">
+    The <code>rust-ui</code> Book
+</a>
+</p>
 
 A truly native mobile focused UI-framework for iOS and android. Many current ui-frameworks in Rust do nothing more than rendering to a window's graphics context (like what games do). Instead Rust-ui uses the native ui-system of the current platform. This allows niche integrations, better accessibility support, interoperability with native ui components (like a tab/side bar) and much more!
 

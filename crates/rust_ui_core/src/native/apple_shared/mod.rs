@@ -53,3 +53,4 @@ pub fn create_task_flush<A:Send,C:Fn(A)>(sync:C)->impl Fn(A)+Send+Sync{
         })
     }
 }
+

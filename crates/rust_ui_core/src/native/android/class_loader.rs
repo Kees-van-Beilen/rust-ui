@@ -49,7 +49,7 @@ impl<'local> BottomSheetDialog<'local> {
         let cls = load("com.google.android.material.bottomsheet.BottomSheetDialog",context, env);
         let constructors = cls.get_constructors(env);
         let l = env.get_array_length(&constructors).unwrap();
-        android_println!("constructors: {}",l);
+        // android_println!("constructors: {}",l);
         let constructor = Constructor::from(env.get_object_array_element(constructors, 0).unwrap());
         let instance: JObject<'_> = unsafe { mem::transmute(constructor.new_instance(&args, env))};
         Self(instance)

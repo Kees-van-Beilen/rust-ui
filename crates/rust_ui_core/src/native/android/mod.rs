@@ -128,11 +128,9 @@ pub mod native {
                     };
                     render_data
                 };
-                android_println!("happy path");
                 drop(data);
                 let _ = self.render(render_data);
             } else {
-                android_println!("unhappy path");
                 drop(data);
             }
         }
