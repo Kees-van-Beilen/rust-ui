@@ -8,6 +8,7 @@ const CLASSES:&[u8] = include_bytes!("./classes.dex");
 
 thread_local! {
     static CALLBACK_CONSTRUCTOR: OnceCell<Retained<android2_java::lang::reflect::Constructor<'static>>> = OnceCell::new();
+    static RUNNABLE_CONSTRUCTOR: OnceCell<Retained<android2_java::lang::reflect::Constructor<'static>>> = OnceCell::new();
     static CALLBACK_ON_DISMISS_CONSTRUCTOR: OnceCell<Retained<android2_java::lang::reflect::Constructor<'static>>> = OnceCell::new();
     static TEXT_WATCHER_CONSTRUCTOR: OnceCell<Retained<android2_java::lang::reflect::Constructor<'static>>> = OnceCell::new();
 }
@@ -46,6 +47,16 @@ pub fn init_callback_class<'jni,'a:'jni>(mut env:&mut jni::JNIEnv<'jni>)->Retain
             name: "onClick".into(),
             sig: "(Landroid/view/View;)V".into(),
             fn_ptr: native_callback as *mut std::ffi::c_void,
+        }
+    ])
+}
+
+pub fn init_runnable_class<'jni,'a:'jni>(mut env:&mut jni::JNIEnv<'jni>)->Retained<android2_java::lang::reflect::Constructor<'static>>{
+    get_constructor(env,"RustUIRunnable",&[
+        jni::NativeMethod {
+            name: "run".into(),
+            sig: "()V".into(),
+            fn_ptr: native_runnable_run as *mut std::ffi::c_void,
         }
     ])
 }
@@ -118,6 +129,28 @@ pub extern "system" fn native_callback_on_dismiss<'jni>(
 
 }
 
+
+pub extern "system" fn native_runnable_run<'jni>(
+    mut env:jni::JNIEnv<'jni>,
+    instance:jni::objects::JObject<'jni>,
+    // dialog_interface:android2_android::content::DialogInterface<'jni>
+) {
+    let env_clone = unsafe { env.unsafe_clone() };
+    // unsafe {
+    //     let context = view.get_context(&mut env);
+    //     ACTIVITY = mem::transmute(context);
+    // }
+    // android_println!("sdf:{:?}",env.find_class("test"));
+    let callback: std::sync::MutexGuard<'_, Box<dyn Fn(jni::JNIEnv)+Send>> = unsafe { env.get_rust_field(&instance, "rawFunctionBox").unwrap() };
+    with_env(env_clone, |env|{callback(env)});
+
+    // callback(env_clone);
+    // drop(callback);
+    // android_println!("sdf:{:p}",&env);
+    // android_println!("{:p}",&env_clone);
+
+}
+
 pub extern "system" fn native_callback<'jni>(
     mut env:jni::JNIEnv<'jni>,
     instance:jni::objects::JObject<'jni>,
@@ -139,6 +172,13 @@ pub extern "system" fn native_callback<'jni>(
 
 }
 
+
+#[repr(transparent)]
+pub struct RunnableBlock<'local> {
+    //Because this data lives on the java side, we have an explicit destructor
+    inner:android2_java::lang::Object<'local>
+}
+
 #[repr(transparent)]
 pub struct CallbackBlock<'local> {
     //Because this data lives on the java side, we have an explicit destructor
@@ -148,6 +188,12 @@ pub struct CallbackBlock<'local> {
 impl<'a> AsRef<android2_android::view::view::OnClickListener<'a>> for CallbackBlock<'a> {
     fn as_ref(&self) -> &android2_android::view::view::OnClickListener<'a> {
         unsafe { mem::transmute::<&CallbackBlock,&android2_android::view::view::OnClickListener<'a>>(self) }
+    }
+}
+
+impl<'a> AsRef<android2_java::lang::Runnable<'a>> for RunnableBlock<'a> {
+    fn as_ref(&self) -> &android2_java::lang::Runnable<'a> {
+        unsafe { mem::transmute::<&RunnableBlock,&android2_java::lang::Runnable<'a>>(self) }
     }
 }
 
@@ -186,7 +232,7 @@ impl<'local> CallbackBlock<'local> {
 
     
     pub fn new<'jni:'local>(env:&mut jni::JNIEnv<'jni>,callback:impl Fn(jni::JNIEnv)+'static)->Self{
-        CALLBACK_CONSTRUCTOR.with(|constructor|{
+        RUNNABLE_CONSTRUCTOR.with(|constructor|{
             let constructor = constructor.get_or_init(||init_callback_class(env));
             let empty_array = jni::objects::JObjectArray::default();
             let instance = constructor.new_instance(&empty_array, env);
@@ -195,6 +241,34 @@ impl<'local> CallbackBlock<'local> {
                 // SAFETY:
                 // Android runs on a single thread, or at least I hope 🙏
                 // There should be a better less error prone way of doing this.
+                let fake_box:Box<dyn Fn(jni::JNIEnv) +Send +'static  > = mem::transmute(boxed);
+                env.set_rust_field(&instance, "rawFunctionBox", fake_box).unwrap();
+            };
+            Self {
+                inner:instance
+            }
+        })
+        // let constructor:Retained<android2_java::lang::reflect::Constructor<'static>> = 
+
+        
+    }
+}
+
+
+impl<'local> RunnableBlock<'local> {
+
+    
+    pub fn new<'jni:'local>(env:&mut jni::JNIEnv<'jni>,callback:impl FnOnce(jni::JNIEnv)+'static)->Self{
+        CALLBACK_CONSTRUCTOR.with(|constructor|{
+            let constructor = constructor.get_or_init(||init_runnable_class(env));
+            let empty_array = jni::objects::JObjectArray::default();
+            let instance = constructor.new_instance(&empty_array, env);
+            unsafe { 
+                let boxed: Box<dyn FnOnce(jni::JNIEnv<'_>) + 'static> = Box::new(callback);
+                // SAFETY:
+                // Android runs on a single thread, or at least I hope 🙏
+                // There should be a better less error prone way of doing this.
+                // Bro this isn't safe
                 let fake_box:Box<dyn Fn(jni::JNIEnv) +Send +'static  > = mem::transmute(boxed);
                 env.set_rust_field(&instance, "rawFunctionBox", fake_box).unwrap();
             };

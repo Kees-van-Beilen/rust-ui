@@ -69,7 +69,7 @@ impl RenderObject for crate::views::TextField {
     }
 }
 
-pub struct NativeTextView(Retained<TextView<'static>>);
+pub struct NativeTextView(pub (crate)Retained<TextView<'static>>);
 
 impl ComputableLayout for NativeTextView {
 

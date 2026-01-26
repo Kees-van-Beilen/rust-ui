@@ -12,10 +12,59 @@ mod views;
 
 pub mod native {
 
-    pub fn create_task(env:&mut JNIEnv){
-        let vm = env.get_java_vm().unwrap();
-        vm.attach_current_thread()
+    // pub fn create_task(env:&mut JNIEnv){
+    //     let vm = env.get_java_vm().unwrap();
+    //     panic!();
+    //     // vm.attach_current_thread()
+    // }
+
+
+    //temporary fix
+    #[derive(Clone,Copy)]
+    struct TrustMeBro<A>(A);
+    unsafe impl<A> Send for TrustMeBro<A> {}
+    unsafe impl<A> Sync for TrustMeBro<A> {}
+
+    /// YOU MUST ATTACH the JVM to the thread that will call the flush 
+    /// (otherwise the world **will** explode)
+    ///
+    /// create a function that when called, dispatches a function call 
+    /// to the main thread and ensures a valid jni context exists
+    /// 
+    /// We assume *this* create_task_flask function is called from the 
+    /// mainthread with a valid context
+    /// The jvm still has to be attached to respective thread in order to work 
+    /// correctly.
+    pub fn create_task_flush<A:Send+'static,C:Fn(A)+Clone+'static>(sync:C)->impl Fn(A)+Send+Sync{
+        let env = unsafe { get_env() };
+        // SAFETY: We are assuming the caller makes sure the jni exists
+        let  env_clone: TrustMeBro<JNIEnv<'static>> = TrustMeBro(unsafe { env.unsafe_clone() });
+        // let jvm = env.get_java_vm().unwrap();
+        // jvm.attach_current_thread()
+        // let sync2:B  = unsafe { std::mem::transmute::<C,C>(sync) };
+        let sync2 = TrustMeBro(sync);
+        move |data:A| {
+            let env = &env_clone;
+            let mut env: JNIEnv<'static> = unsafe { env.0.unsafe_clone() };
+            // let env = unsafe { get_env() };
+            let activity:Activity<'static> = unsafe { mem::transmute(ACTIVITY) };
+            // activity.run+
+            let r = &sync2;
+            let f = r.0.clone();
+            let block = RunnableBlock::new(&mut env, move |jni|{
+                with_env(jni, move |_|{
+                    (f)(data)
+                });
+            });
+            activity.run_on_ui_thread(block.as_ref(), &mut env);
+            // activity.run_on_ui_thread(arg0, env);
+            // dispatch2::run_on_main( |mtm|{
+            //     let r = &sync2;
+            //     (r.0)(data)
+            // })
+        }
     }
+
     //global env was a bad idea. but I don't see any other way.
     //the idea is that whenever java calls back into native, we update the env.
     // thread_local! {
@@ -28,13 +77,14 @@ pub mod native {
 
     pub use super::helper;
     use crate::{
-        android_println, layout::{ComputableLayout, Position, RenderObject, Size}, native::helper::{Retained, get_env, with_env}, retain, view::{
+        android_println, layout::{ComputableLayout, Position, RenderObject, Size}, native::{android::callback::RunnableBlock, helper::{Retained, get_env, with_env}}, retain, view::{
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
         }
     };
     // pub use crate::native::android::ENV;
     use android2_android::{app::{Activity, Fragment}, content::{Context, ContextWrapper}, view::{ContextThemeWrapper, ViewGroup}};
+    use android2_java::lang::Runnable;
     pub use jni;
     use jni::{JNIEnv, objects::JObject};
     use std::{any::type_name, cell::RefCell, mem, rc::Rc, thread};

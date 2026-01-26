@@ -31,7 +31,7 @@ impl Task {
     /// (having to do with the jnienv). 
     /// 
     /// 
-    pub fn create<A:Send+'static,Exe:FnOnce(&dyn Fn(A))->A+Send+'static,Syn:Fn(A)+'static>(executor:Exe,sync:Syn)->Self{
+    pub fn create<A:Send+'static,Exe:FnOnce(&dyn Fn(A))->A+Send+'static,Syn:Fn(A)+Clone+'static>(executor:Exe,sync:Syn)->Self{
         let flush = crate::native::create_task_flush(sync);
 
         let handle = thread::spawn(move ||{

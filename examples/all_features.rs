@@ -60,15 +60,15 @@ pub struct RootView {
         ScrollView {
             y: Some(ScrollBehavior::Scroll),
             VStack {
-                spacing:Some(15.0),
+                spacing:Some(15.0*DPI),
                 for category in views.iter() {
                     VStack {
-                        spacing:Some(2.0),
+                        spacing:Some(2.0*DPI),
                         for (name,sub,view) in category.iter() {
                             HStack {
-                                spacing:Some(10.0),
+                                spacing:Some(10.0*DPI),
                                 VStack {
-                                    spacing:Some(10.0),
+                                    spacing:Some(10.0*DPI),
                                     Spacer()
                                     Text(name)
                                         .title()
@@ -76,17 +76,17 @@ pub struct RootView {
                                         .foreground_color(Color::oklch(0.79, 0.0, 332.47))
                                     Spacer()
                                     
-                                }.frame(Frame::no_preference().width(140.0))
+                                }.frame(Frame::no_preference().width(140.0*DPI))
                                     .background{ColorView(Color::oklch(0.18, 0.0, 332.47))}
-                                ColorView(Color::WHITE).frame(Frame::no_preference().width(2.0))
-                                DynInstance(view).frame(Frame::no_preference().height(120.0))
+                                ColorView(Color::WHITE).frame(Frame::no_preference().width(2.0*DPI))
+                                DynInstance(view).frame(Frame::no_preference().height(120.0*DPI))
                             }
                         }
 
                     }
                     
                 }
-                Spacer().frame(Frame::no_preference().height(200.0))
+                Spacer().frame(Frame::no_preference().height(200.0*DPI))
             }
 
         }.background{ColorView(Color::BLACK)}.foreground_color(Color::WHITE)
@@ -255,6 +255,7 @@ pub struct RootView {
         VStack {
             Text(format!("typed: {text}"))
             TextEditor(bind!(text))
+                .set_identity(10)
                 .frame(Frame::no_preference())
         }
     }

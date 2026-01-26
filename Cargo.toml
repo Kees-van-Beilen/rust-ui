@@ -84,6 +84,15 @@ name = "android_image"
 path = "examples/macros/image.rs"
 crate-type = ["cdylib"]
 
+
+# [[example]]
+# name = "image"
+# path = "examples/macros/image.rs"
+[[example]]
+name = "android_all_features"
+path = "examples/all_features.rs"
+crate-type = ["cdylib"]
+
 [[example]]
 name = "colors"
 path = "examples/macros/colors.rs"
@@ -157,7 +166,7 @@ apk_name = "myapplication"
 [package.metadata.android.application]
 label="myapplication"
 [package.metadata.android.sdk]
-target_sdk_version = 31
+target_sdk_version = 35
 
 [package.metadata.rust-ui.android]
 main_activity_class_entry_method = "com.example.myapplication.MainActivity.mainEntry"

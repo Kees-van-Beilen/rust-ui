@@ -17,6 +17,15 @@ pub mod prelude {
     pub use crate::modifiers::*;
     pub use crate::views::*;
     pub use bevy_color::Color;
+
+
+    /// Don't use this, this is here temporarily
+    #[cfg(target_os = "android")]
+    pub const DPI: f64 = 2.0;
+    /// Don't use this, this is here temporarily
+    #[cfg(not(target_os = "android"))]
+    pub const DPI: f64 = 1.0;
+
 }
 
 pub trait PartialInitialisable {

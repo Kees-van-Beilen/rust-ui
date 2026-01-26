@@ -10,6 +10,7 @@ mod on_tap;
 pub mod image;
 mod scrollview;
 mod sheet;
+mod multiline_text_editor;
 
 pub fn delegate_set_size<T:AsRef<android2_android::view::View<'static>>+Any>(this:&T,to:crate::layout::Size<f64>){
     android_println!("set size del {}",type_name::<T>());
