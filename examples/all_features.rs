@@ -322,7 +322,7 @@ const BLUE: Color = Color::oklch(0.62, 0.12, 236.12);
                     .fill()
 
                 // .margin(Margin::all(30.0))
-                // .background {ColorView(Color::WHITE)}
+                .background {ColorView(Color::WHITE)}
                 .margin(Margin::all(4.0))
                 .background {ColorView(BLUE)}
                 .frame(Frame::new(60.0, 60.0))

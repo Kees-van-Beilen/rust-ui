@@ -5,6 +5,7 @@ mod image;
 mod scroll_view;
 mod sheet;
 mod text_field;
+pub mod multiline_text_editor;
 
 use std::{os::raw::c_void, ptr::NonNull};
 

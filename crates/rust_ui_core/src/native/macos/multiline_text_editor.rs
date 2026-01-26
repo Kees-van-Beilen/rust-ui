@@ -74,7 +74,7 @@ impl RenderObject for TextEditor {
             // let view = unsafe { NSTextView::new(mtm) };
             let view = unsafe { RustTextView::new(mtm, binding) };
 
-
+            
             unsafe { data.real_parent.addSubview(&view) };
 
             (view.clone(),move ||unsafe {view.removeFromSuperview();})
