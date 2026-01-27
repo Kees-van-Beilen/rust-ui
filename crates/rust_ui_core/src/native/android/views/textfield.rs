@@ -24,14 +24,14 @@ impl RenderObject for crate::views::TextField {
             let str = env.new_string(&**self.text_binding.get()).unwrap();
             let str:android2_java::lang::String = unsafe { mem::transmute(str) };
             let text_view: &TextView = view.as_ref();
-
+            text_view.set_text_0(str.as_ref(), env);
             //https://developer.android.com/reference/android/view/Gravity#CENTER
             text_view.set_gravity(17, env);
             let binding = self.text_binding.clone_box();
             let listener = TextChangeListener::new(env, move |_,s|{
                 let str:String = s.into();
+                android_println!("text: {}",&str);
                 binding.update_value(str);
-                // android_println!("text: {}",str);
             });
             text_view.add_text_changed_listener(listener.as_ref(), env);
             match data.stack.get_resource() {
@@ -60,7 +60,7 @@ impl RenderObject for crate::views::TextField {
         let env = &mut data.jni;
         let str = env.new_string(&**self.text_binding.get()).unwrap();
         let str:android2_java::lang::String = unsafe { mem::transmute(str) };
-        i.set_text_0(str.as_ref(), env);
+        // i.set_text_0(str.as_ref(), env);
         android_println!("habhbah3 {:?}",unsafe {mem::transmute_copy::<_,jni::sys::jobject>(i.deref())});
         // drop(borrow);
         borrow.garbage_collection_mark_used(self.identity.unwrap());

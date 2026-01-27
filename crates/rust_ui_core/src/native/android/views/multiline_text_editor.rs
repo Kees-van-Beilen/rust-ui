@@ -1,4 +1,4 @@
-use crate::{layout::RenderObject, views::{TextField, textfield::TextEditor}};
+use crate::{android_println, layout::RenderObject, views::{TextField, textfield::TextEditor}};
 
 
 // pub struct MultilineTextEditor{
@@ -7,9 +7,16 @@ use crate::{layout::RenderObject, views::{TextField, textfield::TextEditor}};
 
 impl RenderObject for TextEditor {
     type Output = super::textfield::NativeTextView;
+
+    fn set_identity(mut self, identity: usize) -> Self {
+        self.identity = Some(identity);
+        self
+    }
     
     fn render(&self, data: crate::native::RenderData) -> Self::Output {
         let mut jni = unsafe { data.jni.unsafe_clone() };
+
+        android_println!(">> id: {:?}",self.identity);
         let out = TextField{
             text_binding: self.text_binding.clone_box(),
             identity: self.identity,

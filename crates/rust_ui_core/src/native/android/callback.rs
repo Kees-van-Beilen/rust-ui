@@ -86,7 +86,7 @@ pub extern "system" fn text_change<'jni>(
     instance:jni::objects::JObject<'jni>,
     editable:android2_android::text::Editable<'jni>
 ) {
-    android_println!("Text changed event");
+    android_println!("Text changed event start");
     let mut env_clone = unsafe { env.unsafe_clone() };
     // unsafe {
     //     let context = view.get_context(&mut env);
@@ -98,8 +98,12 @@ pub extern "system" fn text_change<'jni>(
     let str = cs.to_string(&mut env);
     let str:jni::objects::JString = unsafe { mem::transmute(str) };
     let str = env.get_string(&str).unwrap();
+    android_println!("Text changed event |> get callback");
+
     let callback: std::sync::MutexGuard<'_, Box<dyn Fn(jni::JNIEnv,jni::strings::JavaStr)+Send>> = unsafe { env.get_rust_field(&instance, "rawFunctionBox").unwrap() };
    
+    android_println!("Text changed event |> callback");
+
     with_env(env_clone, |env|{callback(env,str)});
 
     // ENV.replace(&env_clone as *const jni::JNIEnv as *mut jni::JNIEnv);
