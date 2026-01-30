@@ -9,7 +9,6 @@ struct RootView {
         HStack {
             spacing:Some(10.0),
             Spacer()
-            
             Button("Click me!") || {
                 *counter.get_mut() += 1;
             }

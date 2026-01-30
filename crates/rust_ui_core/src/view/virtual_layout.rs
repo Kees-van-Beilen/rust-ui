@@ -37,7 +37,8 @@ pub struct Frame {
     pub position: Position<f64>,
     pub size: Size<f64>,
 }
-
+/// An abstract interface that receives child layout information one by one and can then compute
+/// the preferred size of the container's layout.
 pub trait VirtualLayoutManager<T>: Default {
     ///
     /// Communicate the size this view whishes to take.
@@ -61,6 +62,7 @@ pub trait VirtualLayoutManager<T>: Default {
 
 // if possible this should not be a macro but an auto implement
 
+/// A helper function to iterate through a children in a hierarchy recursively
 pub fn inspect_recurse<Data, Manager: VirtualLayoutManager<Data>>(
     manager: &mut Manager,
     index: &mut usize,
@@ -86,7 +88,7 @@ pub fn inspect_recurse<Data, Manager: VirtualLayoutManager<Data>>(
         }
     }
 }
-
+/// A helper function to iterate through a children in a hierarchy recursively
 pub fn set_layout_recurse<Data, Manager: VirtualLayoutManager<Data>>(
     manager: &mut Manager,
     index: &mut usize,

@@ -4,10 +4,10 @@ mod app;
 mod button;
 mod click_view;
 mod image;
+mod multiline_text_editor;
 mod scrollview;
 mod sheet;
 mod text_field;
-mod multiline_text_editor;
 use std::{os::raw::c_void, ptr::NonNull};
 
 use crate::{layout::ComputableLayout, view::resources::ResourceStack, views::ForegroundColor};
@@ -60,28 +60,32 @@ pub(crate) fn nsview_setposition(view: &NSView, to: crate::layout::Position<f64>
     unsafe { view.setFrameOrigin(NSPoint { x: to.x, y: y }) };
 }
 
-pub fn get_foreground_color(stack:&ResourceStack)->Retained<NSColor>{
+pub fn get_foreground_color(stack: &ResourceStack) -> Retained<NSColor> {
     let foreground_color = stack
-                    .get_resource::<ForegroundColor>()
-                    .copied()
-                    .unwrap_or(ForegroundColor(Color::BLACK));
-                let v = foreground_color.0.to_srgba();
-                let cg_color = unsafe { CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64) };
-                let a = unsafe { NSColor::colorWithCGColor(&cg_color) };
+        .get_resource::<ForegroundColor>()
+        .copied()
+        .unwrap_or(ForegroundColor(Color::BLACK));
+    let v = foreground_color.0.to_srgba();
+    let cg_color =
+        unsafe { CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64) };
+    let a = unsafe { NSColor::colorWithCGColor(&cg_color) };
     a.unwrap()
 }
 
-
-pub fn order_view_in_front(ns_view:&NSView){
+pub fn order_view_in_front(ns_view: &NSView) {
     let super_view = unsafe { ns_view.superview() }.unwrap();
-                // ns_view.removeFromSuperviewWithoutNeedingDisplay();
+    // ns_view.removeFromSuperviewWithoutNeedingDisplay();
 
-    unsafe extern "C-unwind" fn comp(a:NonNull<NSView>,b:NonNull<NSView>,c:*mut c_void) -> NSComparisonResult {
+    unsafe extern "C-unwind" fn comp(
+        a: NonNull<NSView>,
+        b: NonNull<NSView>,
+        c: *mut c_void,
+    ) -> NSComparisonResult {
         if c == a.as_ptr() as _ {
             NSComparisonResult::Descending
-        }else if c == b.as_ptr() as _ {
+        } else if c == b.as_ptr() as _ {
             NSComparisonResult::Ascending
-        }else{
+        } else {
             NSComparisonResult::Same
         }
     }
@@ -101,9 +105,12 @@ pub mod native {
 
     use bevy_color::Color;
     //views
-    use objc2::{AnyThread, DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
+    use objc2::{DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
     use objc2_app_kit::{
-        NSApplication, NSApplicationActivationPolicy, NSColor, NSFontWeight, NSFontWeightBlack, NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight, NSFontWeightMedium, NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin, NSFontWeightUltraLight, NSTextAlignment, NSTextField, NSView
+        NSApplication, NSApplicationActivationPolicy, NSColor, NSFontWeight, NSFontWeightBlack,
+        NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight, NSFontWeightMedium,
+        NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin, NSFontWeightUltraLight,
+        NSTextAlignment, NSTextField, NSView,
     };
     use objc2_core_graphics::CGColor;
     use objc2_foundation::{NSPoint, NSString};
@@ -171,27 +178,25 @@ pub mod native {
             // let mut did_try_swap = false;
 
             let (res, storage, self_container) =
-                borrow.get_or_register_gc::<Store<T>,_>(identity, || {
+                borrow.get_or_register_gc::<Store<T>, _>(identity, || {
                     resume_storage = false;
                     let ps = PersistentStorageRef::default();
-                    ((
-                        data.stack.as_ref().clone(),
-                        ps.clone(),
-                        self.clone(),
-                    ),move||{
-                        let mut bm = ps.borrow_mut();
-                        bm.garbage_collection_unset_all();
-                        bm.garbage_collection_cycle();
-                    })
+                    (
+                        (data.stack.as_ref().clone(), ps.clone(), self.clone()),
+                        move || {
+                            let mut bm = ps.borrow_mut();
+                            bm.garbage_collection_unset_all();
+                            bm.garbage_collection_cycle();
+                        },
+                    )
                 });
-
 
             //we need to copy the state from the last
             if !Rc::ptr_eq(self, self_container) {
                 // this code will execute iff the something else is rerendering this view in the same
                 // frame that this view's state is updated.
                 // this happens when a view updates a binding and a state variable at the same time
-                println!("trace/clone_bindings {}",type_name::<T>());
+                println!("trace/clone_bindings {}", type_name::<T>());
                 self_container
                     .borrow()
                     .clone_bindings(&mut self.borrow_mut());
@@ -376,7 +381,8 @@ pub mod native {
                     .copied()
                     .unwrap_or(ForegroundColor(Color::BLACK));
                 let v = foreground_color.0.to_srgba();
-                let cg_color = CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
+                let cg_color =
+                    CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
                 let a = NSColor::colorWithCGColor(&cg_color);
                 view.setTextColor(a.as_ref().map(|v| &**v));
                 match font_family {

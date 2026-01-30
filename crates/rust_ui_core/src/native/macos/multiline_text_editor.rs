@@ -1,13 +1,16 @@
 use std::cell::RefCell;
 
-use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained, runtime::ProtocolObject};
-use objc2_app_kit::{NSTextDelegate, NSTextView, NSTextViewDelegate};
-use objc2_foundation::{NSNotification, NSObject, NSObjectProtocol, ns_string};
+use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained};
+use objc2_app_kit::NSTextView;
 
-use crate::{layout::{ComputableLayout, RenderObject}, view::state::{PartialAnyBinding, PartialBindingBox}, views::textfield::TextEditor};
+use crate::{
+    layout::{ComputableLayout, RenderObject},
+    view::state::PartialBindingBox,
+    views::textfield::TextEditor,
+};
 
 pub struct RustTextViewIVars {
-    binding:RefCell<PartialBindingBox<String>>
+    binding: RefCell<PartialBindingBox<String>>,
 }
 
 define_class!(
@@ -21,7 +24,7 @@ define_class!(
     pub struct RustTextView;
 
     // unsafe impl NSObjectProtocol for RustTextViewDelegate {
-        
+
     // }
     impl RustTextView {
         #[unsafe(method(didChangeText))]
@@ -54,39 +57,43 @@ impl RustTextView {
         mtm: MainThreadMarker,
         binding: PartialBindingBox<String>,
     ) -> Retained<RustTextView> {
-        let this = Self::alloc(mtm).set_ivars(RustTextViewIVars { binding:RefCell::new(binding) });
+        let this = Self::alloc(mtm).set_ivars(RustTextViewIVars {
+            binding: RefCell::new(binding),
+        });
         msg_send![super(this), init]
         // t.ivars().binding.swap(&RefCell::new(Some(binding)));
     }
 }
 
-
 impl RenderObject for TextEditor {
     type Output = NativeTextEditor;
 
     fn render(&self, data: crate::native::RenderData) -> Self::Output {
-
-
         let identity = self.identity.expect("forgot to set identity on TextEditor");
-        let view = data.persistent_storage.borrow_mut().get_or_register_gc(identity, ||{
-            let binding = self.text_binding.clone_box();
-            let mtm = MainThreadMarker::new().unwrap();
-            // let view = unsafe { NSTextView::new(mtm) };
-            let view = unsafe { RustTextView::new(mtm, binding) };
+        let view = data
+            .persistent_storage
+            .borrow_mut()
+            .get_or_register_gc(identity, || {
+                let binding = self.text_binding.clone_box();
+                let mtm = MainThreadMarker::new().unwrap();
+                // let view = unsafe { NSTextView::new(mtm) };
+                let view = unsafe { RustTextView::new(mtm, binding) };
 
-            
-            unsafe { data.real_parent.addSubview(&view) };
+                unsafe { data.real_parent.addSubview(&view) };
 
-            (view.clone(),move ||unsafe {view.removeFromSuperview();})
-        }).clone();
-        data.persistent_storage.borrow_mut().garbage_collection_mark_used(identity);
+                (view.clone(), move || unsafe {
+                    view.removeFromSuperview();
+                })
+            })
+            .clone();
+        data.persistent_storage
+            .borrow_mut()
+            .garbage_collection_mark_used(identity);
         // ns_string!()
         let str = objc2_foundation::NSString::from_str(self.text_binding.get().as_str());
 
         unsafe { view.setString(&str) };
-        NativeTextEditor{
-            ns_view:view
-        }
+        NativeTextEditor { ns_view: view }
     }
     fn set_identity(mut self, identity: usize) -> Self {
         self.identity = Some(identity);
@@ -94,8 +101,8 @@ impl RenderObject for TextEditor {
     }
 }
 
-pub struct NativeTextEditor{
-    ns_view:Retained<RustTextView>
+pub struct NativeTextEditor {
+    ns_view: Retained<RustTextView>,
 }
 
 impl ComputableLayout for NativeTextEditor {
@@ -109,7 +116,5 @@ impl ComputableLayout for NativeTextEditor {
         super::nsview_setposition(&self.ns_view, to);
     }
 
-    fn destroy(&mut self) {
-        
-    }
+    fn destroy(&mut self) {}
 }

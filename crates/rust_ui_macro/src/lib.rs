@@ -10,12 +10,6 @@ use crate::derive_ui::{StructInfo, UIClassification};
 
 mod derive_ui;
 
-enum CrateType {
-    Bin,
-    Lib
-}
-
-
 fn manifest_android_main_activity() -> Option<String> {
     // dbg!(std::env::var("CARGO_MANIFEST_PATH"));
     let mut reader = BufReader::new(File::open(std::env::var("CARGO_MANIFEST_PATH").ok()?).ok()?);
@@ -37,13 +31,14 @@ fn manifest_android_main_activity() -> Option<String> {
 fn write_main_with(
     out: &mut TokenStream,
     name: &str,
-    after_name:TokenStream,
+    after_name: TokenStream,
     arguments: &Vec<(Ident, TokenStream)>,
     struct_info: &StructInfo,
 ) {
     out.extend([
-                TokenTree::Ident(Ident::new("fn", Span::call_site())),
-                TokenTree::Ident(Ident::new(name, Span::call_site()))]);
+        TokenTree::Ident(Ident::new("fn", Span::call_site())),
+        TokenTree::Ident(Ident::new(name, Span::call_site())),
+    ]);
     out.extend(after_name);
     out.extend([
                 TokenTree::Group(Group::new(Delimiter::Parenthesis, {
@@ -83,8 +78,8 @@ fn write_main_with(
                                 })),
                                 TokenTree::Punct(Punct::new(',', Spacing::Alone)),
                             ]);
-                            arguments.iter().map(|(name,ty)|{
-                                let mut ts = TokenStream::from_iter([TokenTree::Ident(name.clone()),TokenTree::Punct(Punct::new(',', Spacing::Alone))]);
+                            arguments.iter().map(|(name,_)|{
+                                let ts = TokenStream::from_iter([TokenTree::Ident(name.clone()),TokenTree::Punct(Punct::new(',', Spacing::Alone))]);
                                 ts
                             }).for_each(|e|s.extend(e));
                             s
@@ -101,14 +96,25 @@ fn write_main(out: &mut TokenStream, struct_info: &StructInfo) {
         ));
         let export_main = format!("Java_{}", main_method.replace(".", "_"));
         //pub extern "system"
-        out.extend(TokenStream::from_str(
-            "pub extern \"system\""
-        ));
-        write_main_with(out,&export_main,TokenStream::from_str("<'local>").unwrap(),&vec![
-            (Ident::new("env", Span::call_site()),TokenStream::from_str("::rust_ui::native::jni::JNIEnv<'local>").unwrap()),
-            // instance: jni::objects::JObject<'local>,
-            (Ident::new("instance", Span::call_site()),TokenStream::from_str("::rust_ui::native::jni::objects::JObject<'local>").unwrap()),
-        ],struct_info);
+        out.extend(TokenStream::from_str("pub extern \"system\""));
+        write_main_with(
+            out,
+            &export_main,
+            TokenStream::from_str("<'local>").unwrap(),
+            &vec![
+                (
+                    Ident::new("env", Span::call_site()),
+                    TokenStream::from_str("::rust_ui::native::jni::JNIEnv<'local>").unwrap(),
+                ),
+                // instance: jni::objects::JObject<'local>,
+                (
+                    Ident::new("instance", Span::call_site()),
+                    TokenStream::from_str("::rust_ui::native::jni::objects::JObject<'local>")
+                        .unwrap(),
+                ),
+            ],
+            struct_info,
+        );
         // target_os = "android"
     } else {
         out.extend(TokenStream::from_str("#[cfg(target_os = \"android\")]\ncompile_error!(\"To compile for android add the following lines to your Cargo.toml:\\n[package.metadata.rust-ui.android]\\nmain_activity_class_entry_method = \\\"com.example.app.MainActivity.mainEntry\\\"\");"));
@@ -119,7 +125,7 @@ fn write_main(out: &mut TokenStream, struct_info: &StructInfo) {
     out.extend(TokenStream::from_str(
         "#[cfg(not(target_os = \"android\"))]",
     ));
-    write_main_with(out,"main",TokenStream::new(),&vec![],struct_info);
+    write_main_with(out, "main", TokenStream::new(), &vec![], struct_info);
 
     out.extend(TokenStream::from_str(
         "#[cfg(target_os = \"android\")] fn main(){/*boiler plate*/}",

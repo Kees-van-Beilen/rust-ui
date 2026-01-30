@@ -17,7 +17,6 @@ impl TextField {
             identity: None,
         }
     }
-    
 }
 
 impl TextEditor {
@@ -27,7 +26,4 @@ impl TextEditor {
             identity: None,
         }
     }
-    
 }
-
-

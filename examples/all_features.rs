@@ -1,13 +1,18 @@
 #![feature(more_qualified_paths, default_field_values)]
-use rust_ui::{PartialInitialisable, prelude::*, view::dyn_render::{DynGroup, DynInstance}, views::textfield::TextEditor};
-
+use rust_ui::{
+    PartialInitialisable,
+    prelude::*,
+    view::dyn_render::{DynGroup, DynInstance},
+    views::textfield::TextEditor,
+};
 
 macro_rules! create {
     ($name:ty) => {
-        DynGroup::new(<$name>::new(<$name as PartialInitialisable>::PartialInit::default()))
+        DynGroup::new(<$name>::new(
+            <$name as PartialInitialisable>::PartialInit::default(),
+        ))
     };
 }
-
 
 #[ui(main)]
 pub struct RootView {
@@ -52,8 +57,6 @@ pub struct RootView {
             ("Example","Counter",create!(ExampleCounter)),
             ("Example","Counter (custom button)",create!(ExampleCounterOnTap)),
         ],
-
-        
     ],
 
     body:_ = view!{
@@ -75,7 +78,6 @@ pub struct RootView {
                                     Text(sub)
                                         .foreground_color(Color::oklch(0.79, 0.0, 332.47))
                                     Spacer()
-                                    
                                 }.frame(Frame::no_preference().width(140.0*DPI))
                                     .background{ColorView(Color::oklch(0.18, 0.0, 332.47))}
                                 ColorView(Color::WHITE).frame(Frame::no_preference().width(2.0*DPI))
@@ -84,7 +86,6 @@ pub struct RootView {
                         }
 
                     }
-                    
                 }
                 Spacer().frame(Frame::no_preference().height(200.0*DPI))
             }
@@ -93,7 +94,8 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleText {
+#[ui]
+pub struct ExampleText {
     body:_ = view!{
         HStack {
             Spacer()
@@ -102,7 +104,8 @@ pub struct RootView {
         }
     }
 }
-#[ui] pub struct ExampleTextColor {
+#[ui]
+pub struct ExampleTextColor {
     body:_ = view!{
         HStack {
             Spacer()
@@ -112,7 +115,8 @@ pub struct RootView {
         }
     }
 }
-#[ui] pub struct ExampleTextSize {
+#[ui]
+pub struct ExampleTextSize {
     body:_ = view!{
         HStack {
             Spacer()
@@ -123,7 +127,8 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleTextWeight {
+#[ui]
+pub struct ExampleTextWeight {
     body:_ = view!{
         HStack {
             Spacer()
@@ -133,7 +138,8 @@ pub struct RootView {
         }
     }
 }
-#[ui] pub struct ExampleButton {
+#[ui]
+pub struct ExampleButton {
     body:_ = view!{
         HStack {
             Spacer()
@@ -145,7 +151,8 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleButtonTextColor {
+#[ui]
+pub struct ExampleButtonTextColor {
     body:_ = view!{
         HStack {
             Spacer()
@@ -157,7 +164,8 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleButtonTextSize {
+#[ui]
+pub struct ExampleButtonTextSize {
     body:_ = view!{
         HStack {
             Spacer()
@@ -169,7 +177,8 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleButtonTextWeight {
+#[ui]
+pub struct ExampleButtonTextWeight {
     body:_ = view!{
         HStack {
             Spacer()
@@ -181,24 +190,28 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleImageFit {
+#[ui]
+pub struct ExampleImageFit {
     body:_ = view!{
         ImageView("assets/demo/cat.png").fit()
     }
 }
-#[ui] pub struct ExampleImageFill {
+#[ui]
+pub struct ExampleImageFill {
     body:_ = view!{
         ImageView("assets/demo/cat.png").fill()
     }
 }
 
-#[ui] pub struct ExampleColorView {
+#[ui]
+pub struct ExampleColorView {
     body:_ = view!{
         ColorView(Color::oklch(0.79, 0.11, 170.47))
     }
 }
 
-#[ui] pub struct ExampleInput {
+#[ui]
+pub struct ExampleInput {
     #[state] text:String = "edit this text".to_string(),
 
     body:_ = view!{
@@ -209,7 +222,8 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleInputTextColor {
+#[ui]
+pub struct ExampleInputTextColor {
     #[state] text:String = "edit this text".to_string(),
 
     body:_ = view!{
@@ -222,8 +236,8 @@ pub struct RootView {
     }
 }
 
-
-#[ui] pub struct ExampleInputTextSize {
+#[ui]
+pub struct ExampleInputTextSize {
     #[state] text:String = "edit this text".to_string(),
 
     body:_ = view!{
@@ -235,7 +249,8 @@ pub struct RootView {
         }
     }
 }
-#[ui] pub struct ExampleInputTextWeight {
+#[ui]
+pub struct ExampleInputTextWeight {
     #[state] text:String = "edit this text".to_string(),
 
     body:_ = view!{
@@ -248,7 +263,8 @@ pub struct RootView {
     }
 }
 
-#[ui] pub struct ExampleTextEditor {
+#[ui]
+pub struct ExampleTextEditor {
     #[state] text:String = "edit this text".to_string(),
 
     body:_ = view!{
@@ -267,7 +283,8 @@ const COLORS: &[Color] = &[
     Color::oklch(0.42, 0.07, 250.94),
 ];
 
-#[ui] pub struct ExampleScrollViewHorizontal  {
+#[ui]
+pub struct ExampleScrollViewHorizontal  {
     body:_ = view!{
         ScrollView {
             y:Some(ScrollBehavior::Scroll),
@@ -277,14 +294,14 @@ const COLORS: &[Color] = &[
                         .background{ColorView(color.clone())}
 
                 }
-                
+
             }
         }
     }
 }
 
-
-#[ui] pub struct ExampleScrollViewVertical {
+#[ui]
+pub struct ExampleScrollViewVertical {
     body:_ = view!{
         ScrollView {
             x:Some(ScrollBehavior::Scroll),
@@ -294,13 +311,14 @@ const COLORS: &[Color] = &[
                         .background{ColorView(color.clone())}
 
                 }
-                
+
             }
         }
     }
 }
 
-#[ui] pub struct ExampleCounter {
+#[ui]
+pub struct ExampleCounter {
     #[state] count:usize = 0,
     body:_ = view!{
         Button(format!("count: {count}")) || {
@@ -312,7 +330,8 @@ const COLORS: &[Color] = &[
 const BLUE: Color = Color::oklch(0.62, 0.12, 236.12);
 
 //there is something wrong in this view model
-#[ui] pub struct ExampleCounterOnTap {
+#[ui]
+pub struct ExampleCounterOnTap {
     #[state] count:usize = 0,
     body:_ = view!{
         VStack {
@@ -336,15 +355,9 @@ const BLUE: Color = Color::oklch(0.62, 0.12, 236.12);
             }
             Spacer()
         }
-        
+
     }
 }
-
-
-
-
-
-
 
 // #[ui] pub struct ExampleTextColor {
 //     body:_ = view!{

@@ -13,13 +13,13 @@ pub struct Axis {
 }
 
 impl Axis {
-    pub fn scroll_vertical()->Self{
+    pub fn scroll_vertical() -> Self {
         Self {
             x: ScrollBehavior::NoScroll,
             y: ScrollBehavior::Scroll,
         }
     }
-    pub fn scroll_horizontal()->Self{
+    pub fn scroll_horizontal() -> Self {
         Self {
             x: ScrollBehavior::Scroll,
             y: ScrollBehavior::NoScroll,

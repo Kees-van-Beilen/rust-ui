@@ -1,11 +1,14 @@
-use std::{cell::RefCell, os::raw::c_void, ptr::NonNull};
+use std::cell::RefCell;
 
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained};
-use objc2_app_kit::{NSTextField, NSView};
-use objc2_foundation::{NSComparisonResult, NSNotification, NSPoint, NSString};
+use objc2_app_kit::NSTextField;
+use objc2_foundation::{NSNotification, NSPoint, NSString};
 
 use crate::{
-    layout::{ComputableLayout, RenderObject}, native::macos::{get_foreground_color, order_view_in_front}, view::state::PartialBindingBox, views::TextField
+    layout::{ComputableLayout, RenderObject},
+    native::macos::{get_foreground_color, order_view_in_front},
+    view::state::PartialBindingBox,
+    views::TextField,
 };
 
 pub struct RustTextFieldIVars {
@@ -50,7 +53,9 @@ impl RustTextField {
         mtm: MainThreadMarker,
         binding: PartialBindingBox<String>,
     ) -> Retained<RustTextField> {
-        let this = Self::alloc(mtm).set_ivars(RustTextFieldIVars { binding:RefCell::new(Some(binding)) });
+        let this = Self::alloc(mtm).set_ivars(RustTextFieldIVars {
+            binding: RefCell::new(Some(binding)),
+        });
         msg_send![super(this), init]
         // t.ivars().binding.swap(&RefCell::new(Some(binding)));
     }
@@ -79,24 +84,27 @@ impl RenderObject for TextField {
 
         // let new_binding: *const () = &&*self.text_binding as * const _ as *const ();
         // println!("textfield box: {:?}",ptr);
-        
+
         unsafe {
             if let Some(view) = data
-            .persistent_storage
-            .borrow()
-            .get::<Retained<RustTextField>>(identity)
+                .persistent_storage
+                .borrow()
+                .get::<Retained<RustTextField>>(identity)
             {
                 // let binding: *const () = &&*self.text_binding as * const _ as *const ();
                 // data.real_parent.addSubview(view);
                 let ns_view = view.clone();
-                let color = get_foreground_color(&data.stack);
+                let _color = get_foreground_color(&data.stack);
                 // ns_view.setTextColor(Some(&color));
                 let _ = view;
                 let binding = self.text_binding.get();
-                let binding_str = binding.as_str();
-                ns_view.ivars().binding.replace(Some(self.text_binding.clone_box()));
+                let _binding_str = binding.as_str();
+                ns_view
+                    .ivars()
+                    .binding
+                    .replace(Some(self.text_binding.clone_box()));
                 order_view_in_front(&ns_view);
-                
+
                 // let str = NSString::from_str(binding_str);
                 // println!("text binding value: {}",&binding_str);
                 // ns_view.setStringValue(&str);

@@ -1,4 +1,4 @@
-use std::{str::FromStr};
+use std::str::FromStr;
 
 use proc_macro::{
     Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
@@ -15,7 +15,7 @@ pub(crate) enum UIClassification {
 
 const BIND_MACRO: &str = "macro_rules! bind {
     ($state:expr) => {
-        ::rust_ui::view::state::AsPartiBinding::as_partial_binding($state,data.clone())
+        ::rust_ui::view::state::AsPartialBinding::as_partial_binding($state,data.clone())
     };
 };";
 
@@ -296,7 +296,6 @@ fn translate_rust_ui_close_with_data(
                                 s.extend(TokenStream::from_str(";queue.execute();::std::mem::drop(data_ref); if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
 
                                 s
-                                
                             }))]);
         s
     }))

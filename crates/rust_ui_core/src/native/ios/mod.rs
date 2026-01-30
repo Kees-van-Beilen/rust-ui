@@ -2,10 +2,10 @@ mod app;
 mod button;
 mod click_view;
 mod image;
+pub mod multiline_text_editor;
 mod scroll_view;
 mod sheet;
 mod text_field;
-pub mod multiline_text_editor;
 
 use std::{os::raw::c_void, ptr::NonNull};
 
@@ -50,7 +50,7 @@ impl Into<Retained<UIImage>> for Icon {
     }
 }
 
-pub fn order_view_in_front(view:&UIView){
+pub fn order_view_in_front(view: &UIView) {
     let super_view = unsafe { view.superview() }.unwrap();
     unsafe {
         super_view.bringSubviewToFront(view);
@@ -60,7 +60,6 @@ pub fn order_view_in_front(view:&UIView){
 pub mod native {
 
     pub use crate::native::apple_shared::create_task_flush;
-
 
     pub use super::image::*;
     use super::{
@@ -75,7 +74,10 @@ pub mod native {
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
         },
-        views::{FontFamily, FontSize, FontWeight, ForegroundColor, TextAlignment, tabbar::RenderedTabData},
+        views::{
+            FontFamily, FontSize, FontWeight, ForegroundColor, TextAlignment,
+            tabbar::RenderedTabData,
+        },
     };
     use bevy_color::Color;
     use block2::RcBlock;
@@ -184,20 +186,18 @@ pub mod native {
             //     });
 
             let (res, storage, self_container) =
-                borrow.get_or_register_gc::<Store<T>,_>(identity, || {
+                borrow.get_or_register_gc::<Store<T>, _>(identity, || {
                     resume_storage = false;
                     let ps = PersistentStorageRef::default();
-                    ((
-                        data.stack.as_ref().clone(),
-                        ps.clone(),
-                        self.clone(),
-                    ),move||{
-                        let mut bm = ps.borrow_mut();
-                        bm.garbage_collection_unset_all();
-                        bm.garbage_collection_cycle();
-                    })
+                    (
+                        (data.stack.as_ref().clone(), ps.clone(), self.clone()),
+                        move || {
+                            let mut bm = ps.borrow_mut();
+                            bm.garbage_collection_unset_all();
+                            bm.garbage_collection_cycle();
+                        },
+                    )
                 });
-
 
             //we need to copy the state from the last
             if !Rc::ptr_eq(self, self_container) {
@@ -361,9 +361,13 @@ pub mod native {
                     .copied()
                     .unwrap_or(ForegroundColor(Color::BLACK));
                 let v = color.0.to_linear();
-                let color =
-                    UIColor::colorWithRed_green_blue_alpha(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
-                    // UIColor::colorWithRed_green_blue_alpha(red, green, blue, alpha)
+                let color = UIColor::colorWithRed_green_blue_alpha(
+                    v.red as f64,
+                    v.green as f64,
+                    v.blue as f64,
+                    v.alpha as f64,
+                );
+                // UIColor::colorWithRed_green_blue_alpha(red, green, blue, alpha)
                 view.setTextColor(Some(&color));
                 match font_family {
                     FontFamily::SystemUI => {
@@ -567,16 +571,16 @@ pub mod native {
             default_file_manager.changeCurrentDirectoryPath(&path);
         }
 
-        std::panic::set_hook(Box::new(|info|{
+        std::panic::set_hook(Box::new(|info| {
             let panic = info.to_string();
-            dispatch2::run_on_main(move |mtm|{
+            dispatch2::run_on_main(move |mtm| {
                 let alert = unsafe { objc2_ui_kit::UIAlertController::new(mtm) };
                 let title = objc2_foundation::ns_string!("Rust panic");
                 unsafe { alert.setTitle(Some(&title)) };
                 // let msg = info.payload_as_str().unwrap();
                 let body = objc2_foundation::NSString::from_str(&panic);
                 unsafe { alert.setMessage(Some(&body)) };
-                
+
                 let main_window: &UIWindow = unsafe {
                     msg_send![
                         &UIApplication::sharedApplication(mtm).delegate().unwrap(),
@@ -586,7 +590,6 @@ pub mod native {
 
                 let vc = main_window.rootViewController().unwrap();
                 unsafe { vc.presentViewController_animated_completion(&alert, false, None) };
-
             })
         }));
 

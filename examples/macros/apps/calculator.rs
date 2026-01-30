@@ -47,7 +47,6 @@ impl CalculatorState {
     // this is a utility function.
     // These function are handy because we wouldn't want to write big logic heavy code inside of our ui code
     pub fn text(&self) -> &str {
-
         match self {
             CalculatorState::FirstNumber(num) => &num,
             CalculatorState::SecondNumber {
@@ -85,7 +84,7 @@ struct CalcButtonView {
                 // we now give this frame (that contains the text) a nice background depending on the `face_text`
                 ColorView(if face_text.is_ascii_digit() {GREY}else{PINK})
             }
-            .on_tap || { 
+            .on_tap || {
                 // in this on_tap modifier, we can define the logic of what happens when we press this button
                 // first we get a mutable reference to the application state
                 // now be careful, even if we don't modify the variable it wil still rerender the RootView, because we called `get_mut`
@@ -127,7 +126,7 @@ struct CalcButtonView {
                     _=>{}
                 };
             }
-            
+
     }
 }
 

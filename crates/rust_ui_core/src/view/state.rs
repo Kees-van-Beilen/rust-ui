@@ -1,7 +1,16 @@
+#![warn(missing_docs)]
+//! Manage view state
+
 use crate::view::mutable::MutableViewRerender;
 use std::{
-    any::type_name, cell::{Cell, Ref, RefCell, RefMut}, collections::BTreeMap, fmt::Display, ops::{Deref, DerefMut}, rc::Rc
+    any::type_name,
+    cell::{Cell, Ref, RefCell, RefMut},
+    collections::BTreeMap,
+    fmt::Display,
+    ops::{Deref, DerefMut},
+    rc::Rc,
 };
+
 
 /*
 when specialization becomes available `copy` types should use Cell instead of RefCell.
@@ -91,6 +100,11 @@ impl<T> PartialBinding<T> {
     }
 }
 
+///
+/// Flexible Bindings are bindings with custom 
+/// getters and setters, and are a bit more flexible than closures
+/// 
+/// See [`FlexibleBinding`] 
 pub struct FlexiblePartialBinding<Data, T, Capture> {
     data: Rc<RefCell<Data>>,
     capture: Capture,
@@ -100,7 +114,6 @@ pub struct FlexiblePartialBinding<Data, T, Capture> {
     updater: (*const u8, Rc<Box<dyn Fn()>>),
 }
 
-pub struct FlexibleGetter {}
 impl<Data, T, Capture: Clone> Clone for FlexiblePartialBinding<Data, T, Capture> {
     fn clone(&self) -> Self {
         Self {
@@ -112,12 +125,10 @@ impl<Data, T, Capture: Clone> Clone for FlexiblePartialBinding<Data, T, Capture>
         }
     }
 }
-// impl<T,Out:Deref<Target = T>,OutMut,Capture:Clone> Clone for FlexiblePartialBinding<T,Out,OutMut,Capture> {
-//     fn clone(&self) -> Self {
-//         Self { data: self.data.clone(), capture: self.capture.clone(), getter: self.getter.clone(), mut_getter: self.mut_getter.clone(), updater: self.updater.clone() }
-//     }
-// }
 
+///
+/// Flexible Bindings are bindings with custom 
+/// getters and setters, and are a bit more flexible than closures
 pub struct FlexibleBinding<'a, 'b, T, Out: 'b, OutMut: 'b, Capture> {
     data: &'a Rc<RefCell<T>>,
     view: *const u8,
@@ -128,18 +139,33 @@ pub struct FlexibleBinding<'a, 'b, T, Out: 'b, OutMut: 'b, Capture> {
     queue: &'a BindingQueue<'a>,
 }
 
+/// The identifiable traits uniquely identify a value.
+/// This is useful as it allows UI to update more  fluently.
+/// As a full diff is required when analyzing when for instance
+/// which element in a list was removed
 pub trait Identifiable {
+    /// The underlying value
     type Value;
+    /// A unique identifier, the identifier only has to be unique for its local context.
+    /// For instance an iterator of identifiable elements shouldn't produce to values 
+    /// with the same identity.
     fn identity(&self) -> usize;
+    /// Get a reference to the underlying value
     fn value(&self) -> &Self::Value;
+    /// Get a mutable reference to the underlying value
     fn value_mut(&mut self) -> &mut Self::Value;
 }
 
+/// This trait is automatically implemented for [`Vec<T:Identifiable>`]
+/// This is useful when mutating a list of identifiable elements
 pub trait NextIdentity {
+    /// Produces the next safe identifier not already present in the list
     fn next_identity(&self) -> usize;
 }
+
 impl<T: Identifiable> NextIdentity for Vec<T> {
     fn next_identity(&self) -> usize {
+        // highest identity in list + 1
         self.iter().map(|e| e.identity()).max().unwrap_or(0) + 1
     }
 }
@@ -160,6 +186,9 @@ impl<T> Identifiable for (usize, T) {
     }
 }
 impl<T: Identifiable> PartialBinding<Vec<T>> {
+
+    /// Vectors of identifiable elements have a custom iterator implementation.
+    /// This returns an iterator of Identifiable [`FlexibleBinding`]s 
     pub fn iter(
         &self,
     ) -> impl Iterator<Item = (usize, FlexiblePartialBinding<Vec<T>, T::Value, usize>)> {
@@ -168,6 +197,7 @@ impl<T: Identifiable> PartialBinding<Vec<T>> {
         (0..len).map(|index| (self.get()[index].identity(), self.get_index(index)))
     }
 
+    /// get a binding to a specific element in a vector.
     pub fn get_index(&self, index: usize) -> FlexiblePartialBinding<Vec<T>, T::Value, usize> {
         // let phony_data =
         fn getter<'a, T: Identifiable>(
@@ -191,31 +221,21 @@ impl<T: Identifiable> PartialBinding<Vec<T>> {
         }
     }
 }
-impl<T> PartialBinding<Vec<T>> {
-    // pub fn get_index(&self,index:usize)->FlexiblePartialBinding<Vec<T>,T,usize>{
-    //     // let phony_data =
-    //     fn getter<'a,T>(e:&'a Rc<RefCell<Vec<T>>>,c:&'a usize)->Box<dyn Deref<Target = T>+'a>{
-    //         Box::new(Ref::map(e.borrow(), |e|&e[*c]))
-    //     }
-    //     fn getter_mut<'a,T>(e:&'a Rc<RefCell<Vec<T>>>,c:&'a usize)->Box<dyn DerefMut<Target = T>+'a>{
-    //         Box::new(RefMut::map(e.borrow_mut(), |e|&mut e[*c]))
-    //     }
-    //     FlexiblePartialBinding {
-    //         data: self.data.clone(),
-    //         capture:index,
-    //         getter: getter::<T>,
-    //         mut_getter: getter_mut::<T>,
-    //         updater: self.updater.clone(),
-    //     }
-    // }
-}
 
+/// Type alias for bindings to dynamic object
 pub type PartialBindingBox<T> = Box<dyn for<'a> PartialAnyBinding<'a, Value = T>>;
 
+/// Allows any kind of object to be boxed and work as an Binding Box
+/// See [`PartialBindingBox`]
 pub trait PartialAnyBinding<'a> {
+    /// The underlying type
     type Value;
+    /// getter
     fn get(&'a self) -> Box<dyn Deref<Target = Self::Value> + 'a>;
+    /// Due to the flexibility of AnyBindings you can't have mutable access
+    /// to the underlying value. Therefor you have to set the value using this method
     fn update_value(&self, value: Self::Value);
+    /// Create a clone of of this binding into a partial binding box
     fn clone_box(&'a self) -> PartialBindingBox<Self::Value>;
 }
 
@@ -254,8 +274,6 @@ impl<T: 'static> PartialAnyBinding<'_> for PartialBinding<T> {
     }
 }
 
-
-
 ///
 /// Used internally to represent mutable state. This structure is automatically created for every [PartialState] of the view at the `view!` callback blocks.
 /// Like in the `.on_tap` modifier or [`crate::views::Button`] view.
@@ -265,13 +283,22 @@ pub struct State<'a, T> {
     signal: &'a Cell<bool>,
 }
 
+/// Convert a value into a binding, using a given queue
 pub trait AsBinding<'a, T> {
+    /// The type of binding this value should convert into
+    /// See [`FlexibleBinding`] and [`Binding`]
     type BindingKind;
+    /// convert a reference into a binding
     fn as_binding(&'a self, queue: &'a BindingQueue<'a>) -> Self::BindingKind;
 }
 
-pub trait AsPartiBinding<T> {
+/// Convert a value into a partial binding, with a given root container
+pub trait AsPartialBinding<T> {
+    /// The type of binding this value should convert into
+    /// See [`FlexiblePartialBinding`] and [`PartialBinding`]
     type BindingKind;
+
+    /// convert a value reference into a a partial binding
     fn as_partial_binding<V: crate::view::mutable::MutableView + 'static>(
         &self,
         view: Rc<RefCell<V>>,
@@ -284,7 +311,7 @@ impl<'a, T: 'a> AsBinding<'a, T> for PartialBinding<T> {
         self.as_binding(queue)
     }
 }
-impl<T> AsPartiBinding<T> for PartialState<T> {
+impl<T> AsPartialBinding<T> for PartialState<T> {
     type BindingKind = PartialBinding<T>;
 
     fn as_partial_binding<V: crate::view::mutable::MutableView + 'static>(
@@ -295,11 +322,12 @@ impl<T> AsPartiBinding<T> for PartialState<T> {
     }
 }
 
-
 impl<'a: 'b, 'b, T, Out: 'b, OutMut: 'b, Capture> FlexibleBinding<'a, 'b, T, Out, OutMut, Capture> {
+    /// get reference to the wrapped value
     pub fn get(&self) -> Out {
         (self.getter)(self.data, &self.capture)
     }
+    /// get mut reference to the wrapped value
     pub fn get_mut(&mut self) -> OutMut {
         self.queue.add(self.view, self.updater);
         (self.mut_getter)(self.data, &self.capture)
@@ -316,7 +344,6 @@ pub struct PartialBinding<T> {
 }
 impl<T> Clone for PartialBinding<T> {
     fn clone(&self) -> Self {
-
         Self {
             data: self.data.clone(),
             updater: self.updater.clone(),
@@ -468,7 +495,10 @@ impl<T> Default for PartialBinding<T> {
     fn default() -> Self {
         //This is horrible and should be removed as fast as possible
         //it is here as a patch for the `..Default::default()` behavior. However an assertion should happen at compile time for future versions of rust-ui
-        eprintln!("created default binding with T={}, This undesired but unavoidable, just so you know ;)",type_name::<T>());
+        eprintln!(
+            "created default binding with T={}, This undesired but unavoidable, just so you know ;)",
+            type_name::<T>()
+        );
         Self {
             data: None,
             updater: (0 as *const u8, Rc::new(Box::new(|| {}))),
@@ -485,6 +515,9 @@ impl<T> From<T> for PartialState<T> {
 }
 
 impl<T> State<'_, T> {
+    /// Convert a state into a partial state.
+    /// This method should only be used if you do something funky 
+    /// as Rust-ui automatically converts states into partials into bindings at the appropriate places
     pub fn to_partial_state(&self) -> PartialState<T> {
         PartialState {
             data: self.data.clone(),

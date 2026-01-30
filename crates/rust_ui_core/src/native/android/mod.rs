@@ -1,14 +1,9 @@
 use std::cell::RefCell;
 
-pub mod helper;
 pub mod callback;
 pub mod class_loader;
+pub mod helper;
 mod views;
-
-
-
-
-
 
 pub mod native {
 
@@ -18,43 +13,42 @@ pub mod native {
     //     // vm.attach_current_thread()
     // }
 
-
     //temporary fix
-    #[derive(Clone,Copy)]
+    #[derive(Clone, Copy)]
     struct TrustMeBro<A>(A);
     unsafe impl<A> Send for TrustMeBro<A> {}
     unsafe impl<A> Sync for TrustMeBro<A> {}
 
-    /// YOU MUST ATTACH the JVM to the thread that will call the flush 
+    /// YOU MUST ATTACH the JVM to the thread that will call the flush
     /// (otherwise the world **will** explode)
     ///
-    /// create a function that when called, dispatches a function call 
+    /// create a function that when called, dispatches a function call
     /// to the main thread and ensures a valid jni context exists
-    /// 
-    /// We assume *this* create_task_flask function is called from the 
+    ///
+    /// We assume *this* create_task_flask function is called from the
     /// mainthread with a valid context
-    /// The jvm still has to be attached to respective thread in order to work 
+    /// The jvm still has to be attached to respective thread in order to work
     /// correctly.
-    pub fn create_task_flush<A:Send+'static,C:Fn(A)+Clone+'static>(sync:C)->impl Fn(A)+Send+Sync{
+    pub fn create_task_flush<A: Send + 'static, C: Fn(A) + Clone + 'static>(
+        sync: C,
+    ) -> impl Fn(A) + Send + Sync {
         let env = unsafe { get_env() };
         // SAFETY: We are assuming the caller makes sure the jni exists
-        let  env_clone: TrustMeBro<JNIEnv<'static>> = TrustMeBro(unsafe { env.unsafe_clone() });
+        let env_clone: TrustMeBro<JNIEnv<'static>> = TrustMeBro(unsafe { env.unsafe_clone() });
         // let jvm = env.get_java_vm().unwrap();
         // jvm.attach_current_thread()
         // let sync2:B  = unsafe { std::mem::transmute::<C,C>(sync) };
         let sync2 = TrustMeBro(sync);
-        move |data:A| {
+        move |data: A| {
             let env = &env_clone;
             let mut env: JNIEnv<'static> = unsafe { env.0.unsafe_clone() };
             // let env = unsafe { get_env() };
-            let activity:Activity<'static> = unsafe { mem::transmute(ACTIVITY) };
+            let activity: Activity<'static> = unsafe { mem::transmute(ACTIVITY) };
             // activity.run+
             let r = &sync2;
             let f = r.0.clone();
-            let block = RunnableBlock::new(&mut env, move |jni|{
-                with_env(jni, move |_|{
-                    (f)(data)
-                });
+            let block = RunnableBlock::new(&mut env, move |jni| {
+                with_env(jni, move |_| (f)(data));
             });
             activity.run_on_ui_thread(block.as_ref(), &mut env);
             // activity.run_on_ui_thread(arg0, env);
@@ -69,26 +63,37 @@ pub mod native {
     //the idea is that whenever java calls back into native, we update the env.
     // thread_local! {
     //     pub static ENV:RefCell<*mut jni::JNIEnv<'static>> = RefCell::new(std::ptr::null_mut());
-        
+
     // }
-    pub static mut ENV:*mut jni::JNIEnv<'static> = std::ptr::null_mut();
+    pub static mut ENV: *mut jni::JNIEnv<'static> = std::ptr::null_mut();
     //maybe this wil work better
-    pub static mut ACTIVITY:*mut jni::sys::jobject = unsafe { mem::transmute(std::ptr::null_mut() as *mut jni::sys::jobject) };
+    pub static mut ACTIVITY: *mut jni::sys::jobject =
+        unsafe { mem::transmute(std::ptr::null_mut() as *mut jni::sys::jobject) };
 
     pub use super::helper;
     use crate::{
-        android_println, layout::{ComputableLayout, Position, RenderObject, Size}, native::{android::callback::RunnableBlock, helper::{Retained, get_env, with_env}}, retain, view::{
+        android_println,
+        layout::{ComputableLayout, Position, RenderObject, Size},
+        native::{
+            android::callback::RunnableBlock,
+            helper::{Retained, get_env, with_env},
+        },
+        retain,
+        view::{
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
-        }
+        },
     };
     // pub use crate::native::android::ENV;
-    use android2_android::{app::{Activity, Fragment}, content::{Context, ContextWrapper}, view::{ContextThemeWrapper, ViewGroup}};
+    use android2_android::{
+        app::{Activity, Fragment},
+        content::{Context, ContextWrapper},
+        view::{ContextThemeWrapper, ViewGroup},
+    };
     use android2_java::lang::Runnable;
     pub use jni;
     use jni::{JNIEnv, objects::JObject};
     use std::{any::type_name, cell::RefCell, mem, rc::Rc, thread};
-
 
     ///
     /// Note for the android implementors:
@@ -98,16 +103,16 @@ pub mod native {
     pub struct RenderData<'a, 'jni> {
         pub stack: ResourceStack<'a>,
         pub persistent_storage: PersistentStorageRef,
-        pub parent:Retained<android2_android::view::ViewGroup<'static>>,
-        pub instance:android2_android::app::Activity<'static>,
-        pub jni:jni::JNIEnv<'jni>
+        pub parent: Retained<android2_android::view::ViewGroup<'static>>,
+        pub instance: android2_android::app::Activity<'static>,
+        pub jni: jni::JNIEnv<'jni>,
     }
 
     pub trait ActivityExtension {
-        fn context(&self)->&Context<'_>;
+        fn context(&self) -> &Context<'_>;
     }
     impl<'jni> ActivityExtension for android2_android::app::Activity<'jni> {
-        fn context(&self)->&Context<'_> {
+        fn context(&self) -> &Context<'_> {
             let a: &ContextThemeWrapper = self.as_ref();
             let b: &ContextWrapper = a.as_ref();
             b.as_ref()
@@ -120,15 +125,13 @@ pub mod native {
                 stack: self.stack.clone(),
                 persistent_storage: self.persistent_storage.clone(),
                 parent: self.parent.clone(),
-                instance:unsafe { mem::transmute_copy(&self.instance) },
-                jni:unsafe { self.jni.unsafe_clone() }
+                instance: unsafe { mem::transmute_copy(&self.instance) },
+                jni: unsafe { self.jni.unsafe_clone() },
             }
         }
     }
 
     impl RenderData<'_, '_> {
-
-     
         pub fn ament_with<T: Resource, F, K>(&mut self, element: T, with_fn: F) -> K
         where
             for<'b> F: FnOnce(RenderData) -> K,
@@ -137,9 +140,9 @@ pub mod native {
                 let d = RenderData {
                     stack: ResourceStack::Borrow(stack_e),
                     persistent_storage: self.persistent_storage.clone(),
-                    parent:self.parent.clone(),
-                    instance:unsafe { mem::transmute_copy(&self.instance) },
-                    jni:unsafe{ self.jni.unsafe_clone()}
+                    parent: self.parent.clone(),
+                    instance: unsafe { mem::transmute_copy(&self.instance) },
+                    jni: unsafe { self.jni.unsafe_clone() },
                 };
 
                 with_fn(d)
@@ -152,23 +155,25 @@ pub mod native {
         children: Box<dyn ComputableLayout>,
         stack: crate::view::resources::Resources,
         persistent_storage: PersistentStorageRef,
-        parent: Retained<ViewGroup<'static>>
+        parent: Retained<ViewGroup<'static>>,
     }
 
-    impl<V: crate::view::mutable::MutableView + 'static> crate::view::mutable::MutableViewRerender for ::std::rc::Rc<::std::cell::RefCell<V>> {
+    impl<V: crate::view::mutable::MutableView + 'static> crate::view::mutable::MutableViewRerender
+        for ::std::rc::Rc<::std::cell::RefCell<V>>
+    {
         fn rerender(&self) {
             let mut data = self.borrow_mut();
 
-            android_println!("trace/rerender {}",type_name::<V>());
+            android_println!("trace/rerender {}", type_name::<V>());
 
             if let Some(k) = &mut data.get_mut_attached() {
                 let render_data = {
                     let mut b = k.borrow_mut();
                     b.children.destroy();
                     let render_data = RenderData {
-                        parent:b.parent.clone(),
-                        jni:unsafe { get_env().unsafe_clone() },
-                        instance:unsafe { mem::transmute(ACTIVITY) },
+                        parent: b.parent.clone(),
+                        jni: unsafe { get_env().unsafe_clone() },
+                        instance: unsafe { mem::transmute(ACTIVITY) },
                         // real_parent: b.parent.clone(),
                         // parent:
                         // persistent_storage:
@@ -208,7 +213,11 @@ pub mod native {
         type Output = Rc<RefCell<crate::native::MutableView>>;
 
         fn render(&self, data: crate::native::RenderData) -> Self::Output {
-            android_println!("trace/render {} on {:?}",type_name::<T>(),thread::current().id());
+            android_println!(
+                "trace/render {} on {:?}",
+                type_name::<T>(),
+                thread::current().id()
+            );
             // todo!()
             // let view = T::children(self.clone());
             // let parent = data.parent.clone();
@@ -242,7 +251,7 @@ pub mod native {
                 // this code will execute iff the something else is rerendering this view in the same
                 // frame that this view's state is updated.
                 // this happens when a view updates a binding and a state variable at the same time
-                android_println!("trace/clone_bindings {}",type_name::<T>());
+                android_println!("trace/clone_bindings {}", type_name::<T>());
                 self_container
                     .borrow()
                     .clone_bindings(&mut self.borrow_mut());
@@ -250,11 +259,9 @@ pub mod native {
 
             let new_data = RenderData {
                 // real_parent: data.real_parent,
-                parent:data.parent,
-                jni:unsafe { get_env().unsafe_clone() },
-                instance:unsafe {
-                    mem::transmute(ACTIVITY)
-                },
+                parent: data.parent,
+                jni: unsafe { get_env().unsafe_clone() },
+                instance: unsafe { mem::transmute(ACTIVITY) },
                 stack: ResourceStack::Owned(res.clone()),
                 persistent_storage: storage.clone(),
             };
@@ -263,11 +270,11 @@ pub mod native {
                 .persistent_storage
                 .borrow_mut()
                 .garbage_collection_unset_all();
-            android_println!("trace/render_children {} {:p}",type_name::<T>(),&new_data);
+            android_println!("trace/render_children {} {:p}", type_name::<T>(), &new_data);
             let c = T::children(self.clone());
-            android_println!("trace/got_children {}",type_name::<T>());
+            android_println!("trace/got_children {}", type_name::<T>());
             let r = c.render(new_data.clone());
-            android_println!("trace/finish_render_children {}",type_name::<T>());
+            android_println!("trace/finish_render_children {}", type_name::<T>());
             new_data
                 .persistent_storage
                 .borrow_mut()
@@ -298,7 +305,7 @@ pub mod native {
             } else {
                 *attached = Some(view.clone());
             }
-            android_println!("trace/finish_render {}",type_name::<T>());
+            android_println!("trace/finish_render {}", type_name::<T>());
             m.get_attached().clone().unwrap()
         }
         fn set_identity(self, identity: usize) -> Self {
@@ -326,20 +333,31 @@ pub mod native {
         });
         let object: &android2_java::lang::Object = context.as_ref();
         let instance = android2_android::app::Activity::from(instance);
-        
+
         let resources = context.get_resources(&mut env);
         let metrics = resources.get_display_metrics(&mut env);
-        let height = env.get_field(&metrics, "heightPixels", "I").unwrap().i().unwrap();
-        let width = env.get_field(&metrics, "widthPixels", "I").unwrap().i().unwrap();
+        let height = env
+            .get_field(&metrics, "heightPixels", "I")
+            .unwrap()
+            .i()
+            .unwrap();
+        let width = env
+            .get_field(&metrics, "widthPixels", "I")
+            .unwrap()
+            .i()
+            .unwrap();
         // root.render(RenderData {
         //     stack: Default::default(),
         //     persistent_storage: Default::default()
-        // });  
+        // });
 
         //register custom panic handler
         std::panic::set_hook(Box::new(|info| {
             android_println!("Rust panic: {info} \n");
-            android_println!("Backtrace: {} \n",std::backtrace::Backtrace::force_capture());
+            android_println!(
+                "Backtrace: {} \n",
+                std::backtrace::Backtrace::force_capture()
+            );
         }));
         // env.clo
 
@@ -360,7 +378,7 @@ pub mod native {
         // let empty_array = jni::objects::JObjectArray::default();
         // let rust_test_class_instance = constructor.new_instance(&empty_array, &mut env);
 
-        android_println!("start on {:?}",thread::current().id());
+        android_println!("start on {:?}", thread::current().id());
 
         let window = instance.get_window(&mut env);
         // let decor = window.get_decor_view(&mut env);
@@ -370,14 +388,13 @@ pub mod native {
         let native_root = android2_android::widget::RelativeLayout::new_0(&context, &mut env);
         let native_root_group: &ViewGroup = native_root.as_ref();
         let native_root_view = native_root_group.as_ref();
-        let retained_root = retain!(native_root_view,env);
+        let retained_root = retain!(native_root_view, env);
         instance.set_content_view_1(&native_root_view, &mut env);
         // let instance_object: &jni::objects::JObject = instance.as_ref();
         // let inst_o: &jni::objects::JObject = instance.as_ref();
         let glob = env.new_global_ref(instance).unwrap();
 
-        
-        unsafe {ACTIVITY = mem::transmute(glob.as_raw())};
+        unsafe { ACTIVITY = mem::transmute(glob.as_raw()) };
         //SAFETY: the glob will remain in memory for the duration of the program
         mem::forget(glob);
 
@@ -385,17 +402,15 @@ pub mod native {
         //     ENV = &mut env as *mut jni::JNIEnv<'local> as *mut jni::JNIEnv<'static>;
         // }
         // ENV.with(|e|*e.borrow_mut() = (&mut env as *mut jni::JNIEnv<'local>)as *mut jni::JNIEnv<'static>);
-        
-        
-        with_env(env, |env|{
-            
+
+        with_env(env, |env| {
             android_println!("start render");
             let mut rendered_view = root.render(RenderData {
                 stack: Default::default(),
                 persistent_storage: Default::default(),
                 parent: retained_root,
-                instance:unsafe{mem::transmute(ACTIVITY)},
-                jni: env 
+                instance: unsafe { mem::transmute(ACTIVITY) },
+                jni: env,
             });
             android_println!("start set size");
             rendered_view.set_size(Size {
@@ -406,8 +421,6 @@ pub mod native {
 
             rendered_view.set_position(Position { x: 0.0, y: 0.0 });
         });
-        
-
 
         // root.render(data)
 

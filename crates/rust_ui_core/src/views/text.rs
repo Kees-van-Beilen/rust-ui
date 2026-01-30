@@ -11,9 +11,9 @@ use crate::{
 
 /// Supports font weights 100-900, not every system treats font weights the same
 /// thats why this is an enum instead of a number.
-/// 
+///
 /// In the future this enum will change to a struct (to accommodate variable weights)
-#[derive(Clone, Copy, Debug, Default,PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum FontWeight {
     Ultralight,
     Thin,
@@ -28,7 +28,7 @@ pub enum FontWeight {
 }
 
 /// The alignment of text elements
-#[derive(Clone, Copy, Debug, Default,PartialEq,Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TextAlignment {
     /// In most cases this means to the left
     Leading,
@@ -40,7 +40,7 @@ pub enum TextAlignment {
 }
 
 /// The font family to use for text elements.
-#[derive(Default, Clone, Debug,PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub enum FontFamily {
     /// Use the default system bundled font.
     /// (This may not be the same as the default system font)
@@ -55,15 +55,15 @@ pub enum FontFamily {
     Custom(Rc<str>),
 }
 
-#[derive(Clone, Copy, Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ForegroundColor(pub bevy_color::Color);
 
 /// The font size to use for text elements.
-#[derive(Clone, Copy, Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FontSize(pub f64);
 
 /// The color of elements that can be tinted.
-#[derive(Clone,Copy,PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct TintColor(bevy_color::Color);
 
 impl_resource!(FontSize);
@@ -145,7 +145,6 @@ impl Text {
     }
 }
 
-
 #[derive(Debug)]
 pub struct RenderDataDebug<'a> {
     pub stack: ResourceStack<'a>,
@@ -153,7 +152,7 @@ pub struct RenderDataDebug<'a> {
 }
 ///
 /// Debug text allows you to introspect the current render data. This includes the resource stack and the persistent storage container.
-/// 
+///
 pub struct DebugText {
     dbg_fn: Box<dyn Fn(RenderDataDebug) -> String>,
 }
@@ -178,7 +177,6 @@ impl DebugText {
         self
     }
 }
-
 
 impl RenderObject for DebugText {
     type Output = <Text as RenderObject>::Output;

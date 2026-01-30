@@ -1,9 +1,21 @@
 use std::mem;
 
-use android2_android::{content::Context, graphics::BitmapFactory, widget::{self, image_view::ScaleType}};
+use android2_android::{
+    content::Context,
+    graphics::BitmapFactory,
+    widget::{self, image_view::ScaleType},
+};
 use jni::objects::JValue;
 
-use crate::{android_println, layout::{ComputableLayout, RenderObject}, native::{ACTIVITY, ActivityExtension, helper::{Retained, get_env}}, retain};
+use crate::{
+    android_println,
+    layout::{ComputableLayout, RenderObject},
+    native::{
+        ACTIVITY, ActivityExtension,
+        helper::{Retained, get_env},
+    },
+    retain,
+};
 
 pub struct NativeImageHandle(Retained<android2_android::graphics::Bitmap<'static>>);
 
@@ -12,40 +24,45 @@ impl NativeImageHandle {
         // let path = path.to_string();
         // let file_name = objc2_foundation::NSString::from_str(&path);
         // BitmapFactory::new()
-        let context:Context = unsafe{mem::transmute(ACTIVITY)};
-        let env = unsafe {get_env()};
+        let context: Context = unsafe { mem::transmute(ACTIVITY) };
+        let env = unsafe { get_env() };
         let assets = context.get_assets(env);
         let path = env.new_string(path.to_string()).unwrap();
-        let obj:&jni::objects::JObject = path.as_ref();
+        let obj: &jni::objects::JObject = path.as_ref();
         // android_println!("obj -> {:?}",obj);
-        let path: android2_java::lang::String = unsafe {
-            mem::transmute(path)
-        };
-        let file = match env.call_method(&assets, "open", "(Ljava/lang/String;)Ljava/io/InputStream;", &[(&path).into()]) {
+        let path: android2_java::lang::String = unsafe { mem::transmute(path) };
+        let file = match env.call_method(
+            &assets,
+            "open",
+            "(Ljava/lang/String;)Ljava/io/InputStream;",
+            &[(&path).into()],
+        ) {
             Ok(e) => e,
             Err(err) => {
                 let e = env.exception_occurred().unwrap();
                 let cls = env.get_object_class(e).unwrap();
-                
+
                 // android_println!("jva error {:?} {:?}",err,cls);
                 panic!("ds")
-            },
+            }
         };
         // crate::java::io::InputStream::from(res.l().unwrap())
         // let file = assets.open_0(&path, env);
 
-        let bitmap_raw = env.call_static_method("android/graphics/BitmapFactory", "decodeStream", "(Ljava/io/InputStream;)Landroid/graphics/Bitmap;", &[
-            (&file).into()
-        ]).unwrap();
+        let bitmap_raw = env
+            .call_static_method(
+                "android/graphics/BitmapFactory",
+                "decodeStream",
+                "(Ljava/io/InputStream;)Landroid/graphics/Bitmap;",
+                &[(&file).into()],
+            )
+            .unwrap();
 
-        let bitmap:android2_android::graphics::Bitmap = unsafe { mem::transmute(bitmap_raw.l().unwrap()) };
+        let bitmap: android2_android::graphics::Bitmap =
+            unsafe { mem::transmute(bitmap_raw.l().unwrap()) };
 
-
-        NativeImageHandle(retain!(bitmap,env))
+        NativeImageHandle(retain!(bitmap, env))
         // android2_android::graphics::Bitmap::from(
-        
-
-
 
         // unsafe {
         //     NativeImageHandle(
@@ -63,7 +80,6 @@ pub struct ImageView {
     view: Retained<android2_android::widget::ImageView<'static>>,
 }
 
-
 impl RenderObject for crate::views::ImageView {
     type Output = ImageView;
 
@@ -74,22 +90,29 @@ impl RenderObject for crate::views::ImageView {
         match &self.image_handle {
             crate::views::ImageHandle::Native(native_image_handle) => {
                 view.set_image_bitmap(&native_image_handle.0, jni);
-            },
+            }
         }
 
         match self.scaling_mode {
-            crate::views::ImageScalingMode::Fit => {
-
-            },
+            crate::views::ImageScalingMode::Fit => {}
             crate::views::ImageScalingMode::Fill => {
-                let field = ScaleType::from(jni.get_static_field("android/widget/ImageView$ScaleType", "CENTER_CROP", "Landroid/widget/ImageView$ScaleType;").unwrap().l().unwrap());
+                let field = ScaleType::from(
+                    jni.get_static_field(
+                        "android/widget/ImageView$ScaleType",
+                        "CENTER_CROP",
+                        "Landroid/widget/ImageView$ScaleType;",
+                    )
+                    .unwrap()
+                    .l()
+                    .unwrap(),
+                );
                 view.set_scale_type(&field, jni);
-            },
+            }
         }
 
         // ScaleType::new(arg0, arg1, env)
         ImageView {
-            view:retain!(view,jni)
+            view: retain!(view, jni),
         }
     }
 }

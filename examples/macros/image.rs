@@ -48,6 +48,5 @@ struct RootView {
             }
             Spacer()
         }.with_font_size(21.0)
-       
     }
 }

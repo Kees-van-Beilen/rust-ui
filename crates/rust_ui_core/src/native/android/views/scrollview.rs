@@ -1,10 +1,23 @@
-use android2_android::{view::ViewGroup, widget::{FrameLayout, RelativeLayout, ScrollView}};
+use android2_android::{
+    view::ViewGroup,
+    widget::{FrameLayout, RelativeLayout, ScrollView},
+};
 
-use crate::{layout::ComputableLayout, native::{ActivityExtension, android::views::{delegate_destroy, delegate_set_position, delegate_set_size}, helper::Retained}, retain, view::persistent_storage::PersistentStorageRef, views::{Axis, ScrollBehavior}};
+use crate::{
+    layout::ComputableLayout,
+    native::{
+        ActivityExtension,
+        android::views::{delegate_destroy, delegate_set_position, delegate_set_size},
+        helper::Retained,
+    },
+    retain,
+    view::persistent_storage::PersistentStorageRef,
+    views::{Axis, ScrollBehavior},
+};
 
 pub struct NativeScrollView<Child: crate::layout::ComputableLayout> {
     view: Retained<ScrollView<'static>>,
-    content:Retained<ViewGroup<'static>>,
+    content: Retained<ViewGroup<'static>>,
     axis: Axis,
     child: Child,
 }
@@ -12,10 +25,10 @@ pub struct NativeScrollView<Child: crate::layout::ComputableLayout> {
 pub struct ScrollViewStorage {
     storage: PersistentStorageRef,
     view: Retained<ScrollView<'static>>,
-    content:Retained<ViewGroup<'static>>,
+    content: Retained<ViewGroup<'static>>,
 }
 
-impl <T:crate::layout::RenderObject> crate::layout::RenderObject for crate::views::ScrollView<T> {
+impl<T: crate::layout::RenderObject> crate::layout::RenderObject for crate::views::ScrollView<T> {
     type Output = NativeScrollView<T::Output>;
 
     fn set_identity(mut self, identity: usize) -> Self {
@@ -27,7 +40,7 @@ impl <T:crate::layout::RenderObject> crate::layout::RenderObject for crate::view
         let identity = self.identity;
         let mut bm = data.persistent_storage.borrow_mut();
 
-        let view = bm.get_or_register_gc(identity, ||{
+        let view = bm.get_or_register_gc(identity, || {
             let env = &mut data.jni;
             let context = data.instance.context();
             let view = ScrollView::new_0(context, env);
@@ -36,20 +49,23 @@ impl <T:crate::layout::RenderObject> crate::layout::RenderObject for crate::view
             data.parent.add_view_0(vg.as_ref(), env);
 
             let content = RelativeLayout::new_0(context, env);
-            let content_vg:&ViewGroup = content.as_ref();
+            let content_vg: &ViewGroup = content.as_ref();
             vg.add_view_0(content_vg.as_ref(), env);
 
-            let retained: Retained<ScrollView> = retain!(view,env);
-            let retained_content: Retained<ViewGroup> = retain!(content_vg,env);
-            (ScrollViewStorage {
-                storage: Default::default(),
-                view: retained.clone(),
-                content:retained_content.clone()
-            },move ||{
-                let fl: &FrameLayout = retained.as_ref();
-                let vg: &ViewGroup = fl.as_ref();
-                delegate_destroy(vg);
-            })
+            let retained: Retained<ScrollView> = retain!(view, env);
+            let retained_content: Retained<ViewGroup> = retain!(content_vg, env);
+            (
+                ScrollViewStorage {
+                    storage: Default::default(),
+                    view: retained.clone(),
+                    content: retained_content.clone(),
+                },
+                move || {
+                    let fl: &FrameLayout = retained.as_ref();
+                    let vg: &ViewGroup = fl.as_ref();
+                    delegate_destroy(vg);
+                },
+            )
         });
         let storage = view.storage.clone();
         let content_view = view.content.clone();
@@ -61,20 +77,15 @@ impl <T:crate::layout::RenderObject> crate::layout::RenderObject for crate::view
         let child = self.child.render(data);
 
         NativeScrollView {
-            view:view,
-            content:content_view,
-            axis:self.axis,
-            child
+            view: view,
+            content: content_view,
+            axis: self.axis,
+            child,
         }
-
-
-
     }
-
-    
 }
 
-impl <T:ComputableLayout> ComputableLayout for NativeScrollView<T> {
+impl<T: ComputableLayout> ComputableLayout for NativeScrollView<T> {
     fn set_size(&mut self, to: crate::prelude::Size<f64>) {
         // todo!()
         {
@@ -107,9 +118,8 @@ impl <T:ComputableLayout> ComputableLayout for NativeScrollView<T> {
 
         // self.content_view.setFrame(frame);
         // self.ns_view.setContentSize(frame.size);
-        
-        self.child.set_size(child_size);
 
+        self.child.set_size(child_size);
     }
 
     fn set_position(&mut self, to: crate::prelude::Position<f64>) {

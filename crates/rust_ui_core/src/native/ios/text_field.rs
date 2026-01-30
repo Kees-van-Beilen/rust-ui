@@ -5,7 +5,10 @@ use objc2_foundation::{NSNotification, NSPoint, NSString};
 use objc2_ui_kit::{UIControlEvents, UITextField, UITextFieldDelegate};
 
 use crate::{
-    layout::{ComputableLayout, RenderObject}, native::ios::order_view_in_front, view::state::PartialBindingBox, views::TextField
+    layout::{ComputableLayout, RenderObject},
+    native::ios::order_view_in_front,
+    view::state::PartialBindingBox,
+    views::TextField,
 };
 
 pub struct RustTextFieldIVars {
