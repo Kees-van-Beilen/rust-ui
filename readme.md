@@ -45,10 +45,10 @@ If you are on macOS you may now run `cargo +nightly run` to build and run your p
 # Building
 
 ## Supported Platforms
-| | iOS | macOS | android |
-|-|-----|-------|---------|
-|build|✅|✅|:construction:|
-|target|aarch64-apple-ios <br> aarch64-apple-ios-sim <br>x86_64-apple-ios | x86_64-apple-darwin <br> aarch64-apple-darwin | t.b.d.
+| | iOS | macOS | android | ubuntu touch |
+|-|-----|-------|---------|---|
+|build|✅|✅|⚠️  | :construction: |
+|target|aarch64-apple-ios <br> aarch64-apple-ios-sim <br>x86_64-apple-ios | x86_64-apple-darwin <br> aarch64-apple-darwin | armv7-linux-androideabi <br> aarch64-linux-android <br> i686-linux-android <br> x86_64-linux-android  | t.b.d. |
 
 
 
@@ -56,7 +56,8 @@ If you are on macOS you may now run `cargo +nightly run` to build and run your p
 
 <details>
 <table>
-<tr><td>✅</td><td>complete 100%</td></tr>
+<tr><td>✅</td><td>complete 100%, will always be supported</td></tr>
+<tr><td>⚠️</td><td>compiles and runs but has known issues, and doesn't support all features</td></tr>
 <tr><td>:construction:</td><td>Planned</td></tr>
 </table>
 <summary>
