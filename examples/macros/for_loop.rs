@@ -7,7 +7,7 @@ struct RootView {
     #[state] list:Vec<String>,
 
     body:_ = view!{
-        
+
        VStack {
             spacing: Some(10.0),
 
@@ -32,14 +32,9 @@ struct RootView {
                             .background {
                                 ColorView(Color::BLACK)
                             }
-                        
                     }
                 }
             }
-
-
-            
-
         }
     }
 }

@@ -1,13 +1,19 @@
+//! Contains the traits needed to layout views
 use crate::native;
 
+
+/// A generic size struct
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Size<T> {
+    /// A width
     pub width: T,
+    /// A height
     pub height: T,
 }
 
 impl<T: Copy> Size<T> {
-    pub fn splat(value: T) -> Self {
+    /// Construct a size with a width and height both equal to `value`
+    pub const fn splat(value: T) -> Self {
         Self {
             width: value,
             height: value,
@@ -15,12 +21,21 @@ impl<T: Copy> Size<T> {
     }
 }
 
+/// A generic position struct
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Position<T> {
+    /// The x position
     pub x: T,
+    /// The y position
     pub y: T,
 }
 
+/// All rendered Rust-ui views implement ComputableLayout
+/// This trait manages the layout of a view. That is: 
+///  - the min/max/preferred sizes
+///  - the layout of the children
+///  - the position
+///  - the destruction
 pub trait ComputableLayout {
     ///this must cascade down to the children
     fn set_size(&mut self, to: Size<f64>);
@@ -48,10 +63,11 @@ pub trait ComputableLayout {
     fn v_tables_len(&self) -> usize {
         0
     }
-
+    /// Write vtables to a vector
     fn write_v_tables<'a, 'b>(&'a self, _buf: &'b mut Vec<&'a dyn ComputableLayout>) {
         //by default a layout is just one element, so there is nothing dynamic to write
     }
+    /// Write vtables to a vector
     fn write_v_tables_mut<'a, 'b>(&'a mut self, _buf: &'b mut Vec<&'a mut dyn ComputableLayout>) {
         //by default a layout is just one element, so there is nothing dynamic to write
     }
@@ -69,16 +85,24 @@ pub trait ComputableLayout {
     fn preferred_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
         Size::splat(None)
     }
-
+    /// Currently doesn't play a big role, as not all layouts respect min size.
+    /// Defaults to None
     fn min_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
         Size::splat(None)
     }
+    /// Currently doesn't play a big role, as not all layouts respect max size.
+    /// Defaults to None
     fn max_size(&self, _in_frame: &Size<f64>) -> Size<Option<f64>> {
         Size::splat(None)
     }
 }
 
+
+/// All rust-ui views implement this trait. 
+/// It is the bridge necessary to possibly convert a view 
+/// into a native view. 
 pub trait RenderObject: Sized {
+    /// The Rendered view to output
     type Output: ComputableLayout;
     ///create a native view
     fn render(&self, data: native::RenderData) -> Self::Output;

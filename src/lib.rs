@@ -31,21 +31,19 @@
 //! rustup toolchain install nightly
 //! ```
 //! You may make the nightly toolchain your default toolchain using `rustup default nightly` or by adding a [`rust-toolchain.toml`](https://rust-lang.github.io/rustup/overrides.html) file to your project.
+//! The nightly features rust-ui depends on are bound to be added in Rust in the coming year, as both features are complete but lack proper syn/rust-analyzer support.
 //! ### Adding `rust-ui`
-//! Due to crates.io name poaching to properly add `rust-ui` to your project run the following command.
+//! Rust-ui is in a very volatile state, therefore is unavailable on crate.io, to add rust-ui use:
 //! ```sh
-//! cargo add kz-rust-ui --rename rust-ui
+//! cargo add --git https://github.com/Kees-van-Beilen/rust-ui.git
 //! ```
 //! ### Hello world
 //! Now copy the hello world example including the `#![feature(more_qualified_paths,default_field_values)]` part at top.
 //! If you are on macOS you may now run `cargo +nightly run` to build and run your project.
 //!
 //!
-
-// extern crate rust_ui_core;
-
 pub use rust_ui_core::{PartialInitialisable, layout, modifiers, native, view, views};
-
+/// use rust_ui::prelude::*; to import everything you need to create an rust-ui application
 pub mod prelude {
     pub use rust_ui_core::prelude::*;
     pub use rust_ui_macro::*;

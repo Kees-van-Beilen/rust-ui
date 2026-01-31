@@ -1,16 +1,18 @@
+//! Spacers are an empty element that take as much space as possible
 use crate::layout::{ComputableLayout, Position, RenderObject, Size};
 
-/*
-When used in a layout, takes all the remaining space.
-For example:
 
-HStack {
-    Spacer,
-    Text("hello")
-}
+/// When used in a layout, takes all the remaining space.
+/// For example:
+///```
+/// HStack {
+///     Spacer,
+///     Text("hello")
+/// }
+///```
+///
+/// puts the text hello to the right
 
-puts the text hello to the right
-*/
 pub struct Spacer;
 impl RenderObject for Spacer {
     type Output = Spacer;
@@ -28,6 +30,7 @@ impl ComputableLayout for Spacer {
 }
 
 impl Spacer {
+    /// construct a new spacer
     pub fn new(_: impl Into<()>) -> Self {
         Self
     }

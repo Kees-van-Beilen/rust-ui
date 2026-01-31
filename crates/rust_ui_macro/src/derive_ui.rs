@@ -1,4 +1,4 @@
-use std::{str::FromStr};
+use std::str::FromStr;
 
 use proc_macro::{
     Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
@@ -15,7 +15,7 @@ pub(crate) enum UIClassification {
 
 const BIND_MACRO: &str = "macro_rules! bind {
     ($state:expr) => {
-        ::rust_ui::view::state::AsPartiBinding::as_partial_binding($state,data.clone())
+        ::rust_ui::view::state::AsPartialBinding::as_partial_binding($state,data.clone())
     };
 };";
 
@@ -278,7 +278,7 @@ fn translate_rust_ui_close_with_data(
         let mut s = TokenStream::from_str("let data = data.clone(); move").unwrap();
         s.extend(outer_function);
         s.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
-                                let mut s = TokenStream::from_str("let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
+                                let mut s = TokenStream::from_str("let ref_data = &data;let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
                                 let mut sub = TokenStream::new();
                                 sub.extend(data_ref_unpack.clone());
                                 // sub.extend(TokenStream::from_str("let res = ").unwrap());
@@ -296,7 +296,6 @@ fn translate_rust_ui_close_with_data(
                                 s.extend(TokenStream::from_str(";queue.execute();::std::mem::drop(data_ref); if signal.take() {::rust_ui::view::mutable::MutableViewRerender::rerender(&data);} res").unwrap());
 
                                 s
-                                
                             }))]);
         s
     }))
@@ -1485,7 +1484,7 @@ fn gen_effect_macro(data_ref_unpack: &TokenStream) -> TokenStream {
                 let mut s = TokenStream::new();
                 s.extend(TokenStream::from_str("let data = data.clone(); move |$($arg : $t),+|"));
                 s.extend([TokenTree::Group(Group::new(Delimiter::Brace, {
-                    let mut s = TokenStream::from_str("let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
+                    let mut s = TokenStream::from_str("let ref_data = &data;let data_ref = data.borrow(); let signal = ::std::cell::Cell::new(false);let queue = ::rust_ui::view::state::BindingQueue::default(); let res = ").unwrap();
                     let mut sub = TokenStream::new();
                     sub.extend(data_ref_unpack.clone());
 

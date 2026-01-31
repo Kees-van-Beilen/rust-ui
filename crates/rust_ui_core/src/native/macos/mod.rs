@@ -4,13 +4,18 @@ mod app;
 mod button;
 mod click_view;
 mod image;
+mod multiline_text_editor;
 mod scrollview;
 mod sheet;
 mod text_field;
+use std::{os::raw::c_void, ptr::NonNull};
 
-use crate::layout::ComputableLayout;
-use objc2_app_kit::NSView;
-use objc2_foundation::NSPoint;
+use crate::{layout::ComputableLayout, view::resources::ResourceStack, views::ForegroundColor};
+use bevy_color::Color;
+use objc2::rc::Retained;
+use objc2_app_kit::{NSColor, NSView};
+use objc2_core_graphics::CGColor;
+use objc2_foundation::{NSComparisonResult, NSPoint};
 
 //all nsview reps auto participate in the layout manager
 //todo: this file should be split up
@@ -55,17 +60,54 @@ pub(crate) fn nsview_setposition(view: &NSView, to: crate::layout::Position<f64>
     unsafe { view.setFrameOrigin(NSPoint { x: to.x, y: y }) };
 }
 
+pub fn get_foreground_color(stack: &ResourceStack) -> Retained<NSColor> {
+    let foreground_color = stack
+        .get_resource::<ForegroundColor>()
+        .copied()
+        .unwrap_or(ForegroundColor(Color::BLACK));
+    let v = foreground_color.0.to_srgba();
+    let cg_color =
+        unsafe { CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64) };
+    let a = unsafe { NSColor::colorWithCGColor(&cg_color) };
+    a.unwrap()
+}
+
+pub fn order_view_in_front(ns_view: &NSView) {
+    let super_view = unsafe { ns_view.superview() }.unwrap();
+    // ns_view.removeFromSuperviewWithoutNeedingDisplay();
+
+    unsafe extern "C-unwind" fn comp(
+        a: NonNull<NSView>,
+        b: NonNull<NSView>,
+        c: *mut c_void,
+    ) -> NSComparisonResult {
+        if c == a.as_ptr() as _ {
+            NSComparisonResult::Descending
+        } else if c == b.as_ptr() as _ {
+            NSComparisonResult::Ascending
+        } else {
+            NSComparisonResult::Same
+        }
+    }
+    unsafe {
+        super_view.sortSubviewsUsingFunction_context(comp, &*ns_view as *const _ as _);
+    }
+}
+
 pub mod native {
     // use std::rc::Weak;
 
+    pub use crate::native::apple_shared::create_task_flush;
+
     pub use super::image::*;
 
-    use std::{cell::RefCell, rc::Rc};
+    use std::{any::type_name, cell::RefCell, rc::Rc};
 
+    use bevy_color::Color;
     //views
     use objc2::{DefinedClass, MainThreadMarker, rc::Retained, runtime::ProtocolObject};
     use objc2_app_kit::{
-        NSApplication, NSApplicationActivationPolicy, NSFontWeight, NSFontWeightBlack,
+        NSApplication, NSApplicationActivationPolicy, NSColor, NSFontWeight, NSFontWeightBlack,
         NSFontWeightBold, NSFontWeightHeavy, NSFontWeightLight, NSFontWeightMedium,
         NSFontWeightRegular, NSFontWeightSemibold, NSFontWeightThin, NSFontWeightUltraLight,
         NSTextAlignment, NSTextField, NSView,
@@ -81,7 +123,7 @@ pub mod native {
             persistent_storage::PersistentStorageRef,
             resources::{Resource, ResourceStack, Resources},
         },
-        views::{FontFamily, FontSize, FontWeight, TextAlignment},
+        views::{FontFamily, FontSize, FontWeight, ForegroundColor, TextAlignment},
     };
 
     use super::{NSViewRepresentable, app::Delegate, button::RustButton};
@@ -134,13 +176,18 @@ pub mod native {
             let mut resume_storage = true;
             // let mut did_swap = false;
             // let mut did_try_swap = false;
+
             let (res, storage, self_container) =
-                borrow.get_or_init_with::<Store<T>>(identity, || {
+                borrow.get_or_register_gc::<Store<T>, _>(identity, || {
                     resume_storage = false;
+                    let ps = PersistentStorageRef::default();
                     (
-                        data.stack.as_ref().clone(),
-                        PersistentStorageRef::default(),
-                        self.clone(),
+                        (data.stack.as_ref().clone(), ps.clone(), self.clone()),
+                        move || {
+                            let mut bm = ps.borrow_mut();
+                            bm.garbage_collection_unset_all();
+                            bm.garbage_collection_cycle();
+                        },
                     )
                 });
 
@@ -149,6 +196,7 @@ pub mod native {
                 // this code will execute iff the something else is rerendering this view in the same
                 // frame that this view's state is updated.
                 // this happens when a view updates a binding and a state variable at the same time
+                println!("trace/clone_bindings {}", type_name::<T>());
                 self_container
                     .borrow()
                     .clone_bindings(&mut self.borrow_mut());
@@ -159,6 +207,7 @@ pub mod native {
                 stack: ResourceStack::Owned(res.clone()),
                 persistent_storage: storage.clone(),
             };
+            borrow.garbage_collection_mark_used(identity);
             drop(borrow);
 
             new_data
@@ -281,6 +330,8 @@ pub mod native {
                 let cb = self.callback.replace(Box::new(|| panic!()));
                 let view = RustButton::new(mtm, cb);
                 let str = NSString::from_str(&self.label);
+                let color = super::get_foreground_color(&data.stack);
+                view.setContentTintColor(Some(&color));
                 // view.setStringValue(&str);
                 view.setTitle(&str);
                 // view.setBezelStyle(NSBezelStyle::Te);
@@ -323,6 +374,17 @@ pub mod native {
                     .get_resource::<TextAlignment>()
                     .copied()
                     .unwrap_or(TextAlignment::Center);
+
+                let foreground_color = data
+                    .stack
+                    .get_resource::<ForegroundColor>()
+                    .copied()
+                    .unwrap_or(ForegroundColor(Color::BLACK));
+                let v = foreground_color.0.to_srgba();
+                let cg_color =
+                    CGColor::new_srgb(v.red as f64, v.green as f64, v.blue as f64, v.alpha as f64);
+                let a = NSColor::colorWithCGColor(&cg_color);
+                view.setTextColor(a.as_ref().map(|v| &**v));
                 match font_family {
                     FontFamily::SystemUI => {
                         let font = NSFont::systemFontOfSize_weight(

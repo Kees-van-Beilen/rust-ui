@@ -25,7 +25,7 @@ struct RootView {
             GlobalState::Overview => OverviewView {}.boxed()
         }
     }
-    
+
 }
 
 #[derive(Clone, Default)]
@@ -66,7 +66,7 @@ struct OverviewView {
                     CreatePollView{
                         polls:bind!(polls),
                         shown:bind!(show_create_poll_sheet)
-                    }
+                    }.frame(Frame::no_preference().height(700.0))
                 }
             }
             ScrollView {
@@ -133,7 +133,7 @@ struct OverviewPollView {
 //         let polls =  &data_ref.polls;
 //         macro_rules! bind {
 //             ($state:expr) => {
-//                 ::rust_ui::view::state::AsPartiBinding::as_partial_binding($state,data.clone())
+//                 ::rust_ui::view::state::AsPartialBinding::as_partial_binding($state,data.clone())
 //             };
 //         }
 //         ;
@@ -186,7 +186,7 @@ struct OverviewPollView {
 //                                 ::rust_ui::view::mutable::MutableViewRerender::rerender(&data);
 //                             }res
 //                         }
-//                     },0).sheet(::rust_ui::view::state::AsPartiBinding::as_partial_binding(show_create_poll_sheet,data.clone())).with_capture_callback({
+//                     },0).sheet(::rust_ui::view::state::AsPartialBinding::as_partial_binding(show_create_poll_sheet,data.clone())).with_capture_callback({
 //                         let data = data.clone();
 //                         move||{
 //                             use::rust_ui::layout::RenderObject;
@@ -195,14 +195,14 @@ struct OverviewPollView {
 //                             let polls =  &data_ref.polls;
 //                             macro_rules! bind {
 //                                 ($state:expr) => {
-//                                     ::rust_ui::view::state::AsPartiBinding::as_partial_binding($state,data.clone())
+//                                     ::rust_ui::view::state::AsPartialBinding::as_partial_binding($state,data.clone())
 //                                 };
 //                             }
 //                             ;
 //                             CreatePollView::new(<CreatePollView as ::rust_ui::PartialInitialisable>::PartialInit {
 //                                 on_create_poll:Some(Box::new(effect!(|e:usize|{
 //                                     println!("sdffsd");
-//                                 }))),shown: ::rust_ui::view::state::AsPartiBinding::as_partial_binding(show_create_poll_sheet,data.clone()), ..Default::default()
+//                                 }))),shown: ::rust_ui::view::state::AsPartialBinding::as_partial_binding(show_create_poll_sheet,data.clone()), ..Default::default()
 //                             }).set_identity(1)
 //                         }
 //                     },2),)), ..Default::default()
@@ -233,23 +233,21 @@ struct OverviewPollView {
 struct WelcomeScreen {
     #[binding] global:GlobalState,
     body:_ = view!{
-        HStack {
-            Spacer()
+
             VStack {
                 spacing:Some(10.0),
                 Spacer()
                         ImageView("assets/demo/let_it_poll.png")
-                        .frame(Frame::no_preference().height(100.0))
+                        .frame(Frame::no_preference())
                         Text("Welcome to Let It Poll! In this app you can create whatever poll you want, and share them with friends. Excited? no? it is just an example app, calm down.")
                             .align(TextAlignment::Leading)
                         Button("Continue") || {
                             *global.get_mut() = GlobalState::Overview;
                         }
                 Spacer()
-                    
-            }.frame(Frame::no_preference().width(300.0)).margin(Margin::all(12.0))
-            Spacer()
-        }
-        
+
+            }.margin(Margin::all(50.0))
+        // }
+
     }
 }

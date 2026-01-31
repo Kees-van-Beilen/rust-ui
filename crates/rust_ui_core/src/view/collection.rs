@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+//! This module manages view collections, which are usually tuples of views.
 use crate::layout::{ComputableLayout, RenderObject};
 use tuplex::IntoArray;
 
@@ -8,13 +10,16 @@ pub trait LayoutCollection {
     fn with_v_tables(&mut self, f: impl FnOnce(&mut [&mut dyn ComputableLayout]));
     /// Get a reference to the [ComputableLayout]s in this collection
     fn with_v_tables_ref(&self, f: impl FnOnce(&[&dyn ComputableLayout]));
-
+    /// does the same [`LayoutCollection::with_v_tables_ref`] but writes to a vector instead
     fn write_v_tables<'a, 'b>(&'a self, buf: &'b mut Vec<&'a dyn ComputableLayout>);
+    /// does the same [`LayoutCollection::with_v_tables`] but writes to a vector instead
     fn write_v_tables_mut<'a, 'b>(&'a mut self, buf: &'b mut Vec<&'a mut dyn ComputableLayout>);
 }
 /// A view collection, represents a group of objects that can be "rendered" into a [`LayoutCollection`]
 /// View collections are automatically implemented for tuples (with up to 16 elements) whose types implement [`RenderObject`]
 pub trait ViewCollection {
+    /// The rendered view collection type this is, model of rendering is similar
+    /// to [`RenderObject`] and [`ComputableLayout`]
     type RenderOutput: LayoutCollection;
     /// transform this collections into a [`LayoutCollection`]
     fn render(&self, data: crate::native::RenderData) -> Self::RenderOutput;
@@ -49,6 +54,7 @@ macro_rules! impl_collection {
     };
 }
 
+// generated
 impl_collection!(A 0);
 impl_collection!(A 0, B 1);
 impl_collection!(A 0, B 1, C 2);

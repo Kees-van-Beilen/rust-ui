@@ -1,13 +1,22 @@
+//! This module contains the `.background {}` modifier
 use crate::layout::{ComputableLayout, RenderObject, Size};
 
+///
+/// Background modifier
 pub trait BackgroundModifier: Sized + RenderObject {
+    ///
+    /// Background modifier. This renders the parent view and uses its size and layout
+    /// to render a background view below the parent view.
+    /// 
     fn background<T: RenderObject>(self, background: T) -> BackgroundView<Self, T> {
         BackgroundView(self, background)
     }
 }
 impl<T: RenderObject> BackgroundModifier for T {}
 
+/// The actual background view in the view hierarchy
 pub struct BackgroundView<Child: RenderObject, Background: RenderObject>(Child, Background);
+/// The rendered background view.
 pub struct RenderedBackgroundView<Child: ComputableLayout, Background: ComputableLayout>(
     Child,
     Background,

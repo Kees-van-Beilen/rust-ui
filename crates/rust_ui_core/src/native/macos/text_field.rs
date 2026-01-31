@@ -1,15 +1,18 @@
+use std::cell::RefCell;
+
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained};
 use objc2_app_kit::NSTextField;
 use objc2_foundation::{NSNotification, NSPoint, NSString};
 
 use crate::{
     layout::{ComputableLayout, RenderObject},
+    native::macos::{get_foreground_color, order_view_in_front},
     view::state::PartialBindingBox,
     views::TextField,
 };
 
 pub struct RustTextFieldIVars {
-    binding: PartialBindingBox<String>,
+    binding: RefCell<Option<PartialBindingBox<String>>>,
 }
 
 define_class!(
@@ -32,7 +35,10 @@ define_class!(
         #[unsafe(method(textDidChange:))]
         fn text_change(&self, _notification: &NSNotification) {
             let text = unsafe { self.stringValue() }.to_string();
-            self.ivars().binding.update_value(text);
+            println!("text change: {:?}",text);
+            if let Some(e) = self.ivars().binding.replace(None) {
+                e.update_value(text);
+            }
 
             // self.ivars().binding
             // self.ivars().binding
@@ -47,7 +53,9 @@ impl RustTextField {
         mtm: MainThreadMarker,
         binding: PartialBindingBox<String>,
     ) -> Retained<RustTextField> {
-        let this = Self::alloc(mtm).set_ivars(RustTextFieldIVars { binding });
+        let this = Self::alloc(mtm).set_ivars(RustTextFieldIVars {
+            binding: RefCell::new(Some(binding)),
+        });
         msg_send![super(this), init]
         // t.ivars().binding.swap(&RefCell::new(Some(binding)));
     }
@@ -74,23 +82,41 @@ impl RenderObject for TextField {
             .borrow_mut()
             .garbage_collection_mark_used(identity);
 
+        // let new_binding: *const () = &&*self.text_binding as * const _ as *const ();
+        // println!("textfield box: {:?}",ptr);
+
         unsafe {
             if let Some(view) = data
                 .persistent_storage
                 .borrow()
                 .get::<Retained<RustTextField>>(identity)
             {
+                // let binding: *const () = &&*self.text_binding as * const _ as *const ();
                 // data.real_parent.addSubview(view);
                 let ns_view = view.clone();
+                let _color = get_foreground_color(&data.stack);
+                // ns_view.setTextColor(Some(&color));
                 let _ = view;
-                let str = NSString::from_str(self.text_binding.get().as_str());
-                ns_view.setStringValue(&str);
+                let binding = self.text_binding.get();
+                let _binding_str = binding.as_str();
+                ns_view
+                    .ivars()
+                    .binding
+                    .replace(Some(self.text_binding.clone_box()));
+                order_view_in_front(&ns_view);
+
+                // let str = NSString::from_str(binding_str);
+                // println!("text binding value: {}",&binding_str);
+                // ns_view.setStringValue(&str);
                 // ns_view.stringValue().
                 NativeTextField { ns_view }
             } else {
                 let mtm = MainThreadMarker::new().unwrap();
                 // let bo = clone_dyn::clone_into_box(&self.text_binding);
+                let color = get_foreground_color(&data.stack);
                 let ns_view = RustTextField::new(mtm, self.text_binding.clone_box());
+                ns_view.setTextColor(Some(&color));
+                ns_view.setMaximumNumberOfLines(0);
                 let str = NSString::from_str(self.text_binding.get().as_str());
                 ns_view.setStringValue(&str);
                 {
@@ -99,8 +125,10 @@ impl RenderObject for TextField {
                         .borrow_mut()
                         .register_for_garbage_collection(identity, move || {
                             ns_view.removeFromSuperview();
+                            println!("destroyed nstextfield");
                         });
                 }
+                println!("created nstextfield");
                 data.real_parent.addSubview(&ns_view);
                 data.persistent_storage
                     .borrow_mut()
@@ -137,6 +165,7 @@ impl ComputableLayout for NativeTextField {
     }
 
     fn destroy(&mut self) {
+        println!("should have been destroyed");
         // let view = self.ns_view;
         // unsafe { view.removeFromSuperview() };
     }

@@ -1,6 +1,9 @@
+//! Wrapper around the native image view.
+
 /// An image handle points to an image. Images may be located on disk, bundled into the application or ar part of a global system image collection.
 /// You should not construct [`crate::native::NativeImageHandle`] yourself.
 pub enum ImageHandle {
+    /// An image handle already converted into a native image handle
     Native(crate::native::NativeImageHandle),
 }
 

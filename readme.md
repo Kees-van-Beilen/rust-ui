@@ -7,11 +7,13 @@
 </p>
 
 
-<center>
-
-[Documentation](https://rust-ui.inpolen.nl/doc/) • [The `rust-ui` Book](https://rust-ui.inpolen.nl/book/) 
-
-</center>
+<p align="center">
+<a href="https://rust-ui.inpolen.nl/doc/">Documentation</a>
+• 
+<a href="https://rust-ui.inpolen.nl/book/">
+    The <code>rust-ui</code> Book
+</a>
+</p>
 
 A truly native mobile focused UI-framework for iOS and android. Many current ui-frameworks in Rust do nothing more than rendering to a window's graphics context (like what games do). Instead Rust-ui uses the native ui-system of the current platform. This allows niche integrations, better accessibility support, interoperability with native ui components (like a tab/side bar) and much more!
 
@@ -43,10 +45,10 @@ If you are on macOS you may now run `cargo +nightly run` to build and run your p
 # Building
 
 ## Supported Platforms
-| | iOS | macOS | android |
-|-|-----|-------|---------|
-|build|✅|✅|:construction:|
-|target|aarch64-apple-ios <br> aarch64-apple-ios-sim <br>x86_64-apple-ios | x86_64-apple-darwin <br> aarch64-apple-darwin | t.b.d.
+| | iOS | macOS | android | ubuntu touch |
+|-|-----|-------|---------|---|
+|build|✅|✅|⚠️  | :construction: |
+|target|aarch64-apple-ios <br> aarch64-apple-ios-sim <br>x86_64-apple-ios | x86_64-apple-darwin <br> aarch64-apple-darwin | armv7-linux-androideabi <br> aarch64-linux-android <br> i686-linux-android <br> x86_64-linux-android  | t.b.d. |
 
 
 
@@ -54,7 +56,8 @@ If you are on macOS you may now run `cargo +nightly run` to build and run your p
 
 <details>
 <table>
-<tr><td>✅</td><td>complete 100%</td></tr>
+<tr><td>✅</td><td>complete 100%, will always be supported</td></tr>
+<tr><td>⚠️</td><td>compiles and runs but has known issues, and doesn't support all features</td></tr>
 <tr><td>:construction:</td><td>Planned</td></tr>
 </table>
 <summary>
@@ -145,6 +148,42 @@ If you're unable to boot the development disk on your target device, or if you'r
 8. Success, it might though not work on every build but every second build, in that case just build twice.
 
 
+## Android
+The preferred tool for building on android is `cargo-apk`. When running a Cargo apk build command the output will be recorded in `target/<debug|.>/apk/<examples|.>/lib` for instance `target/debug/apk/examples/lib` these .so files can be directly linked in android studio. To an android studio project to an your build output include:
+```kts
+android {
+    // ... there should already be some things in here
+
+    sourceSets["main"].jniLibs.srcDirs("path/to/target/debug/apk/examples/lib")
+}
+```
+in your build.gradle.kts
+
+Also in your main activity:
+```java
+public class MainActivity extends AppCompatActivity {
+
+    static {
+        //load the appropriate library name (excluding the lib- prefix)
+        System.loadLibrary("android_hello_world");
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        this.mainEntry();
+    }
+
+    public native void mainEntry();
+}
+```
+Make sure that your `Cargo.toml` entry also has been set up with the correct class name and classpath of your main activity:
+
+```toml
+
+[package.metadata.rust-ui.android]
+main_activity_class_entry_method = "com.example.myapplication.MainActivity.mainEntry"
+```
 
 ---
 
@@ -163,4 +202,6 @@ If you're unable to boot the development disk on your target device, or if you'r
 </table>
 
 
+
 This project was funded through the [NGI0 Commons Fund](https://nlnet.nl/commonsfund), a fund established by [NLnet](https://nlnet.nl/) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu/) programme, under the aegis of [DG Communications Networks, Content and Technology](https://commission.europa.eu/about-european-commission/departments-and-executive-agencies/communications-networks-content-and-technology_en) under grant agreement No [101135429](https://cordis.europa.eu/project/id/101135429). Additional funding is made available by the [Swiss State Secretariat for Education, Research and Innovation](https://www.sbfi.admin.ch/sbfi/en/home.html) (SERI).
+

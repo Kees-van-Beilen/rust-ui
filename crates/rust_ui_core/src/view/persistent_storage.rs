@@ -1,4 +1,12 @@
-use std::{any::Any, cell::RefCell, collections::BTreeMap, fmt::Debug, rc::Rc};
+#![warn(missing_docs)]
+//! Manage storage between ui state changes.
+use std::{
+    any::{Any, TypeId},
+    cell::RefCell,
+    collections::BTreeMap,
+    fmt::Debug,
+    rc::Rc,
+};
 
 ///
 /// PersistentStorage is used in mutable views during rendering. It is passed to the children, which can use their identity
@@ -12,12 +20,14 @@ use std::{any::Any, cell::RefCell, collections::BTreeMap, fmt::Debug, rc::Rc};
 ///
 #[derive(Default, Debug)]
 pub struct PersistentStorage {
-    map: BTreeMap<usize, Box<dyn Any>>,
+    map: BTreeMap<(usize, TypeId), Box<dyn Any>>,
     /// views that want to register to the garbage collection
     /// this happens if a view needs to continue having focus between rerenders
     garbage_collection: BTreeMap<usize, GarbageCollectable>,
 }
 
+/// Meta information on variables to be garbage collected.
+/// This object keeps track of the cleanup function and if it is time to cleanup the object
 pub struct GarbageCollectable {
     remove_fn: Box<dyn FnOnce()>,
     /// before rerendering this flag will be set to false
@@ -32,15 +42,21 @@ impl Debug for GarbageCollectable {
     }
 }
 
+/// A wrapper around [`PersistentStorage`] that can be easily cloned
 #[derive(Default, Clone, Debug)]
 pub struct PersistentStorageRef {
+    /// Inner reference to the [`PersistentStorage`]
     pub cell: Rc<RefCell<PersistentStorage>>,
 }
 
 impl PersistentStorage {
+    /// Get an storage object from an identity and Type.
     pub fn get<T: Any>(&self, identity: usize) -> Option<&T> {
-        self.map.get(&identity).and_then(|e| e.downcast_ref())
+        self.map
+            .get(&(identity, TypeId::of::<T>()))
+            .and_then(|e| e.downcast_ref())
     }
+    /// Get an storage object from an identity and Type or instantiate one
     pub fn get_or_init_with<'a, T: Any>(
         &'a mut self,
         identity: usize,
@@ -55,7 +71,8 @@ impl PersistentStorage {
         }
         self.get(identity).unwrap()
     }
-
+    /// Get an storage object from an identity and Type or instantiate one and register it with the garbage collector.
+    /// However note that you may only register one gc object per identity
     pub fn get_or_register_gc<'a, T: Any, A: FnOnce() + 'static>(
         &'a mut self,
         identity: usize,
@@ -71,8 +88,11 @@ impl PersistentStorage {
         }
         self.get(identity).unwrap()
     }
+    /// Insert an storage object for a given identity and type.
+    /// This will override any preexisting object with the same type and identity
     pub fn insert<T: Any>(&mut self, identity: usize, item: T) {
-        self.map.insert(identity, Box::new(item));
+        self.map
+            .insert((identity, TypeId::of::<T>()), Box::new(item));
     }
 
     ///
@@ -92,16 +112,20 @@ impl PersistentStorage {
             },
         );
     }
+    /// Mark an specific identity as used. This means that it won't be cleaned up
+    /// in the next gc cycle.
     pub fn garbage_collection_mark_used(&mut self, identity: usize) {
         if let Some(gc) = self.garbage_collection.get_mut(&identity) {
             gc.flagged_to_keep = true;
         }
     }
+    /// After a gc cycle is done, all flags shut be unset, such that views can be collected by gc again.
     pub fn garbage_collection_unset_all(&mut self) {
         for value in self.garbage_collection.values_mut() {
             value.flagged_to_keep = false;
         }
     }
+    /// Commit a gc cycle. Calls the destructor of any [`GarbageCollectable`] that is not marked as used.
     pub fn garbage_collection_cycle(&mut self) {
         let removals: Vec<usize> = self
             .garbage_collection
@@ -115,10 +139,14 @@ impl PersistentStorage {
         }
     }
 }
+
 impl PersistentStorageRef {
+    /// Get a reference to the storage
     pub fn borrow(&self) -> std::cell::Ref<'_, PersistentStorage> {
         self.cell.borrow()
     }
+
+    /// Get a mutable reference to the storage
     pub fn borrow_mut(&self) -> std::cell::RefMut<'_, PersistentStorage> {
         self.cell.borrow_mut()
     }

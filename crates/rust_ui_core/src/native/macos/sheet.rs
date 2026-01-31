@@ -142,20 +142,40 @@ impl<Sheet: RenderObject + 'static, View: RenderObject> RenderObject
                         };
                         let main_window = NSApp(mtm).windows().firstObject().unwrap();
                         let mut rendered = sheet.render(new_data.clone());
-                        rendered.set_size(NSSize::new(300.0, 300.0).into());
+                        let pref = rendered.preferred_size(&NSSize::new(300.0, 300.0).into());
+                        let width = pref.width.unwrap_or(300.0);
+                        let height = pref.height.unwrap_or(300.0);
+                        window.setContentSize(NSSize::new(width, height));
+                        rendered.set_size(NSSize::new(width, height).into());
                         rendered.set_position(Position::default());
                         unsafe { main_window.beginSheet_completionHandler(&window, None) };
                         let del =
                             RustWindowDelegate::new_attached_to_window(Box::new(rendered), &window);
                         drop(borrow);
+                        data.persistent_storage.borrow_mut().insert::<PersistData>(
+                            *identity,
+                            Some((window, new_data, del.clone())),
+                        );
+
                         data.persistent_storage
                             .borrow_mut()
-                            .insert::<PersistData>(*identity, Some((window, new_data, del)));
+                            .register_for_garbage_collection(*identity, move || {
+                                println!("remove sheet");
+                                let mtm = MainThreadMarker::new().unwrap();
+                                let main_window = NSApp(mtm).windows().firstObject().unwrap();
+                                unsafe { main_window.endSheet(&del.ivars().window) };
+                            });
                     } else {
                         // println!("lost context");
                     }
                 }
             }
+            if show_sheet {
+                data.persistent_storage
+                    .borrow_mut()
+                    .garbage_collection_mark_used(*identity);
+            }
+
             render
         } else {
             panic!("oops")

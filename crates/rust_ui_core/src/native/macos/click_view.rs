@@ -13,7 +13,7 @@ pub struct ClickableContainerIVars {
 define_class!(
     #[unsafe(super = NSView)]
     #[thread_kind = MainThreadOnly]
-    #[name = "RustButton"]
+    #[name = "RustOnTap"]
     #[ivars = ClickableContainerIVars]
     pub struct ClickableContainer;
 

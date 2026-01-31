@@ -37,7 +37,8 @@ pub struct Frame {
     pub position: Position<f64>,
     pub size: Size<f64>,
 }
-
+/// An abstract interface that receives child layout information one by one and can then compute
+/// the preferred size of the container's layout.
 pub trait VirtualLayoutManager<T>: Default {
     ///
     /// Communicate the size this view whishes to take.
@@ -61,6 +62,7 @@ pub trait VirtualLayoutManager<T>: Default {
 
 // if possible this should not be a macro but an auto implement
 
+/// A helper function to iterate through a children in a hierarchy recursively
 pub fn inspect_recurse<Data, Manager: VirtualLayoutManager<Data>>(
     manager: &mut Manager,
     index: &mut usize,
@@ -86,7 +88,7 @@ pub fn inspect_recurse<Data, Manager: VirtualLayoutManager<Data>>(
         }
     }
 }
-
+/// A helper function to iterate through a children in a hierarchy recursively
 pub fn set_layout_recurse<Data, Manager: VirtualLayoutManager<Data>>(
     manager: &mut Manager,
     index: &mut usize,
@@ -136,10 +138,14 @@ pub fn set_layout_recurse<Data, Manager: VirtualLayoutManager<Data>>(
 ///
 /// ```
 #[macro_export]
+//TODO: allow doc comments
 macro_rules! virtual_layout {
     ($name:ident ($data:ident, $partial:ident) => $rendered:ident ($layout:ident) {$($field:ident:$type:ty),+}) => {
+        /// Created using macros
         pub struct $name<T: crate::view::collection::ViewCollection> {
+            /// Created using macros
             $(pub $field : $type),+,
+            /// Created using macros
             pub children: T,
         }
         impl<T: crate::view::collection::ViewCollection> Default for $partial<T>{
@@ -150,13 +156,19 @@ macro_rules! virtual_layout {
                 }
             }
         }
+        /// Created using macros
         pub struct $partial<T: crate::view::collection::ViewCollection> {
+            /// Created using macros
              $(pub $field : Option<$type>),+,
+             /// Created using macros
              pub children: Option<T>
         }
+        /// Created using macros
         pub struct $data {
+            /// Created using macros
             $(pub $field : $type),+,
         }
+        /// Created using macros
         pub struct $rendered<T: crate::view::collection::LayoutCollection> {
             data:$data,
             frame:crate::view::virtual_layout::Frame,
@@ -167,6 +179,7 @@ macro_rules! virtual_layout {
             type PartialInit = $partial<T>;
         }
         impl<T: crate::view::collection::ViewCollection> $name<T> {
+            /// Created using macros
             pub fn new(init: $partial<T>)->Self{
                 Self {
                     $($field : init.$field.unwrap_or_default()),+,
@@ -178,6 +191,7 @@ macro_rules! virtual_layout {
             type Output = $rendered<T::RenderOutput>;
 
             fn render(&self, data: crate::native::RenderData) -> Self::Output {
+                // crate::android_println!("(virtual)trace/render {}",std::any::type_name::<$name<T>>());
                 $rendered {
                     data: $data {
                         $($field : self.$field),+,

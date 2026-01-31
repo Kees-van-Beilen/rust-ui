@@ -11,6 +11,80 @@ log = "0.4.27"
 syslog = "7.0.0"
 tuplex = "0.1.2"
 
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21.1"
+[target.'cfg(target_os = "android")'.dependencies.android2_android]
+git = "https://codeberg.org/kees-van-beilen/android2.git"
+rev = "5781948bc2"
+features = [
+    "android.widget.FrameLayout",
+    "android.app.ActionBar",
+    "android.app.Activity",
+    "android.app.Fragment",
+    "android.content.Context",
+    "android.content.ContextWrapper",
+    "android.content.res.AssetManager",
+    "android.content.res.Resources",
+    "android.graphics.Bitmap",
+    "android.graphics.BitmapFactory",
+    "android.graphics.Paint",
+    "android.graphics.Typeface",
+    "android.text.Editable",
+    "android.text.TextPaint",
+    "android.text.TextWatcher",
+    "android.util.DisplayMetrics",
+    "android.view.ContextThemeWrapper",
+    "android.view.View.OnClickListener",
+    "android.view.View",
+    "android.view.ViewGroup.LayoutParams",
+    "android.view.ViewGroup",
+    "android.view.ViewParent",
+    "android.view.Window",
+    "android.widget.Button",
+    "android.widget.EditText",
+    "android.widget.ImageView.ScaleType",
+    "android.widget.ImageView",
+    "android.widget.RelativeLayout.LayoutParams",
+    "android.widget.RelativeLayout",
+    "android.widget.ScrollView",
+    "android.widget.TextView",
+    "java.io.InputStream",
+    "java.lang.CharSequence",
+    "java.lang.Object",
+    "java.lang.String",
+    "java.lang.ClassLoader",
+    "java.lang.Runnable",
+    "android.app.Dialog",
+    "android.content.DialogInterface",
+    "android.content.DialogInterface.OnDismissListener"
+]
+[target.'cfg(target_os = "android")'.dependencies.android2_java]
+git = "https://codeberg.org/kees-van-beilen/android2.git"
+rev = "5781948bc2"
+features = [
+    "java.lang.CharSequence",
+    "java.lang.String",
+    "java.lang.Object",
+    "java.lang.Class",
+    "java.lang.ClassLoader",
+    "java.nio.ByteBuffer",
+    "java.io.InputStream",
+    "java.lang.reflect.Constructor",
+]
+
+[target.'cfg(target_os = "android")'.dependencies.android2_dalvik]
+git = "https://codeberg.org/kees-van-beilen/android2.git"
+rev = "5781948bc2"
+features = [
+    "dalvik.system.InMemoryDexClassLoader",
+    "dalvik.system.BaseDexClassLoader",
+    "java.lang.ClassLoader",
+    "java.lang.String",
+    "java.nio.ByteBuffer",
+]
+
+#dalvik.system.BaseDexClassLoader
+
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block2 = "0.6.1"
@@ -19,6 +93,7 @@ objc2-app-kit = "0.3.0"
 objc2-core-graphics = "0.3.0"
 objc2-foundation = "0.3.0"
 objc2-quartz-core = "0.3.0"
+dispatch2 = "0.3.0"
 
 [target.'cfg(target_os = "ios")'.dependencies]
 block2 = "0.6.1"
@@ -28,3 +103,4 @@ objc2-foundation = "0.3.0"
 objc2-quartz-core = "0.3.0"
 objc2-ui-kit = "0.3.1"
 objc2-os-log = "0.3.1"
+dispatch2 = "0.3.0"

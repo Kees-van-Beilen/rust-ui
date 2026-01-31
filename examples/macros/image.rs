@@ -13,7 +13,7 @@ struct ImageDetailView {
                 ImageScalingMode::Fit => "Fit",
                 ImageScalingMode::Fill => "Fill",
             })
-            ImageView("./assets/demo/cat.png")
+            ImageView("cat.png")
                 .set_scaling_mode(*mode)
                 .background {
                     ColorView(Color::BLACK)
@@ -48,6 +48,5 @@ struct RootView {
             }
             Spacer()
         }.with_font_size(21.0)
-       
     }
 }

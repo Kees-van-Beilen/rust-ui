@@ -1,3 +1,4 @@
+//! Wrapper around native text like views
 use std::rc::Rc;
 
 use crate::{
@@ -11,24 +12,33 @@ use crate::{
 
 /// Supports font weights 100-900, not every system treats font weights the same
 /// thats why this is an enum instead of a number.
-/// 
+///
 /// In the future this enum will change to a struct (to accommodate variable weights)
-#[derive(Clone, Copy, Debug, Default,PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum FontWeight {
+    /// 100
     Ultralight,
+    /// 200
     Thin,
+    /// 300
     Light,
     #[default]
+    /// 400, this is the default
     Regular,
+    /// 500
     Medium,
+    /// 600
     Semibold,
+    /// 700
     Bold,
+    /// 800
     Heavy,
+    /// 900
     Black,
 }
 
 /// The alignment of text elements
-#[derive(Clone, Copy, Debug, Default,PartialEq,Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TextAlignment {
     /// In most cases this means to the left
     Leading,
@@ -40,7 +50,7 @@ pub enum TextAlignment {
 }
 
 /// The font family to use for text elements.
-#[derive(Default, Clone, Debug,PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub enum FontFamily {
     /// Use the default system bundled font.
     /// (This may not be the same as the default system font)
@@ -55,18 +65,24 @@ pub enum FontFamily {
     Custom(Rc<str>),
 }
 
-/// The font size to use for text elements.
-#[derive(Clone, Copy, Debug,PartialEq)]
-pub struct FontSize(pub f64);
 
 /// The color of elements that can be tinted.
-#[derive(Clone,Copy,PartialEq)]
-pub struct TintColor(bevy_color::Color);
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ForegroundColor(pub bevy_color::Color);
+
+/// The font size to use for text elements.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FontSize(pub f64);
+
+// /// The color of elements that can be tinted.
+// #[derive(Clone, Copy, PartialEq)]
+// pub struct TintColor(bevy_color::Color);
 
 impl_resource!(FontSize);
 impl_resource!(FontWeight);
 impl_resource!(FontFamily);
 impl_resource!(TextAlignment);
+impl_resource!(ForegroundColor);
 
 ///
 /// This is a wrapper around a native text view. You may use modifiers to change text properties such as FontWeight or FontSize.
@@ -127,6 +143,7 @@ impl_resource!(TextAlignment);
 ///
 #[doc(alias = "TextView")]
 pub struct Text {
+    /// the content string of the text view
     pub content: String,
 }
 
@@ -141,15 +158,18 @@ impl Text {
     }
 }
 
-
+/// A reference to the native render data in a cross platform wrappers.
+/// You should not mutate this data
 #[derive(Debug)]
 pub struct RenderDataDebug<'a> {
+    /// The resource stack just before its handed to the view
     pub stack: ResourceStack<'a>,
+    /// The persistent storage just before its handed to the view
     pub persistent_storage: PersistentStorageRef,
 }
 ///
 /// Debug text allows you to introspect the current render data. This includes the resource stack and the persistent storage container.
-/// 
+///
 pub struct DebugText {
     dbg_fn: Box<dyn Fn(RenderDataDebug) -> String>,
 }
@@ -174,7 +194,6 @@ impl DebugText {
         self
     }
 }
-
 
 impl RenderObject for DebugText {
     type Output = <Text as RenderObject>::Output;

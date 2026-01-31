@@ -1,6 +1,6 @@
 [package]
 name = "rust-ui"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 authors = ["Kees van Beilen"]
 description = "A truly native mobile focused UI-framework for iOS and android."
@@ -46,27 +46,60 @@ rust_ui_macro = {path = "crates/rust_ui_macro"}
 [[example]]
 name = "let_it_poll"
 path = "examples/apps/let_it_poll/main.rs"
+[[example]]
+name = "android_let_it_poll"
+path = "examples/apps/let_it_poll/main.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "calculator"
 path = "examples/macros/apps/calculator.rs"
+[[example]]
+name = "android_calculator"
+path = "examples/macros/apps/calculator.rs"
+crate-type = ["cdylib"]
 
 
 [[example]]
 name = "for_loop"
 path = "examples/macros/for_loop.rs"
+[[example]]
+name = "android_for_loop"
+path = "examples/macros/for_loop.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "hello_world"
 path = "examples/macros/hello_world.rs"
+[[example]]
+name = "android_hello_world"
+path = "examples/macros/hello_world.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "image"
 path = "examples/macros/image.rs"
+[[example]]
+name = "android_image"
+path = "examples/macros/image.rs"
+crate-type = ["cdylib"]
+
+
+# [[example]]
+# name = "image"
+# path = "examples/macros/image.rs"
+[[example]]
+name = "android_all_features"
+path = "examples/all_features.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "colors"
 path = "examples/macros/colors.rs"
+[[example]]
+name = "android_colors"
+path = "examples/macros/colors.rs"
+crate-type = ["cdylib"]
 
 [[example]]
 name = "counter"
@@ -83,7 +116,8 @@ path = "examples/macros/text.rs"
 [[example]]
 name = "wm_hello_world"
 path = "examples/no_macros/hello_world.rs"
-
+#Java_com_example_myapplication_MainActivity_mainEntry
+#Java_com_example_myapplication_MainActivity_mainEntry
 [[example]]
 name = "wm_colors"
 path = "examples/no_macros/colors.rs"
@@ -123,3 +157,16 @@ long_description = """
 A longer description, but that doesn't change the
 fact that this is an  example application.
 """
+
+[package.metadata.android]
+# Specifies the package property of the manifest.
+package = "com.example.myapplication"
+build_targets = [ "armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android" ]
+apk_name = "myapplication"
+[package.metadata.android.application]
+label="myapplication"
+[package.metadata.android.sdk]
+target_sdk_version = 35
+
+[package.metadata.rust-ui.android]
+main_activity_class_entry_method = "com.example.myapplication.MainActivity.mainEntry"

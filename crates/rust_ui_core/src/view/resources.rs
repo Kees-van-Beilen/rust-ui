@@ -1,9 +1,17 @@
+#![warn(missing_docs)]
+//! Pass down resources through the ui view hierarchy
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
     fmt::Debug,
 };
 
+
+///
+/// Resources a scoped data structure that can be passed down to children.
+/// For instance [`crate::views::text::TintColor`] can be set on a root view, 
+/// and its children will still have access to the same resource, or it can 
+/// even be changed for specific children.
 #[clone_dyn::clone_dyn]
 pub trait Resource: Any + Debug {
     ///
@@ -40,7 +48,10 @@ pub struct Resources {
 ///
 #[derive(Debug)]
 pub enum ResourceStack<'a> {
+    /// Owned variant of the resource stack. This is usually handed to the last child in the hierarchy.
+    /// But no guarantees can be made on if you will receive the owned variant.
     Owned(Resources),
+    /// Borrowed variant 
     Borrow(&'a mut Resources),
 }
 impl Default for ResourceStack<'_> {
