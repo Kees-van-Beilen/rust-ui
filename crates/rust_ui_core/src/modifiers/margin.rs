@@ -1,5 +1,9 @@
+//! the `.margin()` modifier
 use crate::layout::{ComputableLayout, RenderObject, Size};
 #[derive(Clone, Copy, Debug)]
+
+/// A margin describes how many pixels of margin each side of a view 
+/// should have
 pub struct Margin {
     top: f64,
     bottom: f64,
@@ -7,6 +11,7 @@ pub struct Margin {
     right: f64,
 }
 impl Margin {
+    /// an equal top and bottom margin
     pub const fn vertical(value: f64) -> Self {
         Self {
             top: value,
@@ -15,6 +20,7 @@ impl Margin {
             right: 0.0,
         }
     }
+    /// an equal left and right margin
     pub const fn horizontal(value: f64) -> Self {
         Self {
             top: 0.0,
@@ -23,6 +29,7 @@ impl Margin {
             right: value,
         }
     }
+    /// A equal margin around all sides
     pub const fn all(value: f64) -> Self {
         Self {
             top: value,
@@ -32,14 +39,22 @@ impl Margin {
         }
     }
 }
+
+/// The margin modifier
 pub trait MarginModifier: Sized + RenderObject {
+    /// Sets a view margin.
+    /// What this does is wrap a view around a container.
+    /// The container assumes the size of the child view
+    /// + the described margin.
     fn margin(self, margin: Margin) -> MarginView<Self> {
         MarginView(self, margin)
     }
 }
 impl<T: RenderObject> MarginModifier for T {}
 
+/// A view with a margin
 pub struct MarginView<Child: RenderObject>(Child, Margin);
+/// A rendered view with a margin
 pub struct RenderedMarginView<Child: ComputableLayout>(Child, Margin);
 
 impl<T: RenderObject> RenderObject for MarginView<T> {

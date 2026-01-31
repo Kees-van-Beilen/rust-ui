@@ -1,8 +1,14 @@
+//! `.on_appear() || {}` modifier
 use std::cell::RefCell;
-
 use crate::layout::{ComputableLayout, RenderObject, Size};
-
+/// OnAppear modifier
 pub trait OnAppearModifier: Sized + RenderObject {
+    /// Cal a function when a view is rendered for the first time.
+    /// If a view is removed (garbage collected) and then reappears
+    /// this callback will be called again.
+    /// 
+    /// Please note there are currently some oddities with using this modifier
+    /// Especially if using a [`crate::view::task::Task`]
     fn on_appear(self) -> OnAppearView<Self> {
         OnAppearView {
             child: self,
@@ -13,21 +19,23 @@ pub trait OnAppearModifier: Sized + RenderObject {
 }
 impl<T: RenderObject> OnAppearModifier for T {}
 
+/// A view with callback
 pub struct OnAppearView<Child: RenderObject> {
     child: Child,
     callback: RefCell<Box<dyn Fn()>>,
     identity: Option<usize>,
 }
 impl<Child: RenderObject> OnAppearView<Child> {
+    #[doc(hidden)]
     pub fn with_capture_callback(mut self, func: impl Fn() + 'static, identity: usize) -> Self {
         self.callback = RefCell::new(Box::new(func));
         self.identity = Some(identity);
         self
     }
 }
+/// A rendered view with callback
 pub struct RenderedOnAppearView<Child: ComputableLayout> {
     child: Child,
-    // callback:Box<dyn Fn()>
 }
 
 impl<T: RenderObject> RenderObject for OnAppearView<T> {
@@ -45,7 +53,6 @@ impl<T: RenderObject> RenderObject for OnAppearView<T> {
         }
         RenderedOnAppearView {
             child: self.child.render(data),
-            // callback:self.callback.replace(Box::new(||{}))
         }
     }
 }

@@ -1,13 +1,20 @@
+//! the `.frame()` modifier
 use crate::layout::{ComputableLayout, RenderObject, Size};
 #[derive(Clone, Copy, Debug, Default)]
+
+/// A frame layout, it describes the min, max and preferred size.
 pub struct Frame {
-    min: Size<Option<f64>>,
-    max: Size<Option<f64>>,
-    preferred: Size<Option<f64>>,
+    /// Min size this frame will allow
+    pub min: Size<Option<f64>>,
+    /// The max size this frame allows
+    pub max: Size<Option<f64>>,
+    /// The preferred size, of the frame.
+    pub preferred: Size<Option<f64>>,
 }
 
 impl Frame {
-    pub fn new(width: f64, height: f64) -> Frame {
+    /// Construct a new frame with a preferred size.
+    pub const fn new(width: f64, height: f64) -> Frame {
         Frame {
             min: Size::splat(None),
             max: Size::splat(None),
@@ -17,34 +24,43 @@ impl Frame {
             },
         }
     }
-
-    pub fn no_preference() -> Self {
+    /// Construct a frame with no sizing information.
+    /// A frame like that will take up as much size as 
+    /// necessary.
+    pub const fn no_preference() -> Self {
         Frame {
             min: Size::splat(None),
             max: Size::splat(None),
             preferred: Size::splat(None),
         }
     }
-
-    pub fn width(mut self, value: f64) -> Self {
+    /// Set the preferred width
+    pub const fn width(mut self, value: f64) -> Self {
         self.preferred.width = Some(value);
         self
     }
-
-    pub fn height(mut self, value: f64) -> Self {
+    /// Set the preferred height
+    pub const fn height(mut self, value: f64) -> Self {
         self.preferred.height = Some(value);
         self
     }
 }
-
+/// Frame modifier
 pub trait FrameModifier: Sized + RenderObject {
+    /// Modify a view's preferred frame layout
+    /// Note that certain views like text views react differently
+    /// towards getting a forced size. One platform may vertically and 
+    /// horizontally center the text, whilst an other platform sticks it 
+    /// in the top left corner
     fn frame(self, frame: Frame) -> FrameView<Self> {
         FrameView(self, frame)
     }
 }
 impl<T: RenderObject> FrameModifier for T {}
 
+/// A view with modified frame layout
 pub struct FrameView<Child: RenderObject>(Child, Frame);
+/// A rendered view with modified frame layout
 pub struct RenderedFrameView<Child: ComputableLayout>(Child, Frame);
 
 impl<T: RenderObject> RenderObject for FrameView<T> {

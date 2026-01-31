@@ -7,7 +7,7 @@ pub struct Size<T> {
 }
 
 impl<T: Copy> Size<T> {
-    pub fn splat(value: T) -> Self {
+    pub const fn splat(value: T) -> Self {
         Self {
             width: value,
             height: value,

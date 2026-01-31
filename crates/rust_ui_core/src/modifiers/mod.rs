@@ -1,3 +1,7 @@
+#![warn(missing_docs)]
+//! Modifiers are views/virtual views that wrap around an actual view.
+//! Modifiers may change resource, introduce new views, or change layout.
+
 pub mod background;
 pub mod boxed;
 pub mod font;
