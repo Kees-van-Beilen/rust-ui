@@ -1,6 +1,8 @@
-// #![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg")]
-// #![doc = include_str!("../readme.md")]
-// #![warn(missing_docs)]
+
+#![warn(missing_docs)]
+#![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg")]
+#![doc = include_str!("../../../readme.md")]
+
 
 pub mod icon;
 pub mod layout;
@@ -30,6 +32,8 @@ pub mod prelude {
     pub const DPI: f64 = 1.0;
 }
 
+/// An assoc type allowing function overloading in the ui language
 pub trait PartialInitialisable {
+    /// The initializer of the partial initialisable
     type PartialInit;
 }
