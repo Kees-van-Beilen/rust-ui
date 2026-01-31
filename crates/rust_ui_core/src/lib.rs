@@ -1,5 +1,6 @@
 // #![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg")]
 // #![doc = include_str!("../readme.md")]
+// #![warn(missing_docs)]
 
 pub mod icon;
 pub mod layout;

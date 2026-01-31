@@ -1,14 +1,37 @@
+//! The implementation of the rust-ui for loop
 use crate::layout::{ComputableLayout, RenderObject};
 
+/// The list view here is unhappily named, is does not create a list
+/// instead it represents a collection of children and places the in 
+/// the hierarchy as if this view didn't exist
+/// Example:
+/// ```text
+/// HStack
+///  - Text
+///  - ListView
+///    - Text
+///    - Button
+/// ```
+/// Becomes
+/// ```text
+/// HStack
+///  - Text
+///  - Text
+///  - Button
+/// ```
 pub struct ListView<A: RenderObject> {
     elements: Vec<A>,
 }
 
 impl<A: RenderObject> ListView<A> {
+    /// construct a new list
     pub fn new(elements: Vec<A>) -> Self {
         Self { elements }
     }
 }
+
+
+/// rendered variant of list
 pub struct RenderedListView<A: ComputableLayout> {
     elements: Vec<A>,
 }

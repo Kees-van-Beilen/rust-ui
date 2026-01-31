@@ -1,4 +1,5 @@
-// //! this crate provides a view that may or may not exists. Mimicking the if-loop control flow
+//! this crate provides a view that may or may not exists. Mimicking the if-loop control flow
+//! This is currently removed.
 
 // use crate::layout::ComputableLayout;
 

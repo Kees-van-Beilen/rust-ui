@@ -1,3 +1,6 @@
+//!
+//! A wrapper around the native button widget.
+//! 
 use std::cell::RefCell;
 
 ///
@@ -28,11 +31,14 @@ use std::cell::RefCell;
 ///
 #[doc(alias = "ButtonView")]
 pub struct Button {
+    /// The text that appears inside of the button
     pub label: String,
+    /// The callback called when the button is pressed
     pub callback: RefCell<Box<dyn Fn()>>,
 }
-
+/// The partial initializer of [`Button`]
 pub trait ButtonPartialInit {
+    /// Create a button
     fn init(self) -> Button;
 }
 

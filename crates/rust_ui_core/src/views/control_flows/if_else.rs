@@ -3,12 +3,16 @@ use crate::layout::{ComputableLayout, RenderObject};
 
 /// Used internally, this view represents an if-else block
 pub enum EitherView<A: RenderObject, B: RenderObject> {
+    /// View A
     ViewA(A),
+    /// View B
     ViewB(B),
 }
 /// Used internally, this view represents a rendered if-else block
 pub enum RenderEitherView<A: ComputableLayout, B: ComputableLayout> {
+    /// View A
     ViewA(A),
+    /// View B
     ViewB(B),
 }
 

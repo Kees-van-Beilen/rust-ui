@@ -1,3 +1,5 @@
+//! Stacks layout its children either horizontally or vertically.
+
 use crate::{
     self as rust_ui,
     view::virtual_layout::{inspect_recurse, set_layout_recurse},
@@ -18,6 +20,8 @@ virtual_layout!(VStack (VStackData,VStackPartialInit) => RenderedVStack (VStackL
     spacing:f64
 });
 
+/// A horizontal stack lays out its children horizontally 
+/// and takes as much height and width as necessary
 #[derive(Default, Debug)]
 pub struct HStackLayout {
     current_width: f64,
@@ -28,6 +32,8 @@ pub struct HStackLayout {
     child_count: usize,
 }
 
+/// A vertical stack lays out its children vertically 
+/// and takes as much height and width as necessary
 #[derive(Default, Debug)]
 pub struct VStackLayout {
     current_height: f64,

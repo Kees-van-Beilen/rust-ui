@@ -138,10 +138,14 @@ pub fn set_layout_recurse<Data, Manager: VirtualLayoutManager<Data>>(
 ///
 /// ```
 #[macro_export]
+//TODO: allow doc comments
 macro_rules! virtual_layout {
     ($name:ident ($data:ident, $partial:ident) => $rendered:ident ($layout:ident) {$($field:ident:$type:ty),+}) => {
+        /// Created using macros
         pub struct $name<T: crate::view::collection::ViewCollection> {
+            /// Created using macros
             $(pub $field : $type),+,
+            /// Created using macros
             pub children: T,
         }
         impl<T: crate::view::collection::ViewCollection> Default for $partial<T>{
@@ -152,13 +156,19 @@ macro_rules! virtual_layout {
                 }
             }
         }
+        /// Created using macros
         pub struct $partial<T: crate::view::collection::ViewCollection> {
+            /// Created using macros
              $(pub $field : Option<$type>),+,
+             /// Created using macros
              pub children: Option<T>
         }
+        /// Created using macros
         pub struct $data {
+            /// Created using macros
             $(pub $field : $type),+,
         }
+        /// Created using macros
         pub struct $rendered<T: crate::view::collection::LayoutCollection> {
             data:$data,
             frame:crate::view::virtual_layout::Frame,
@@ -169,6 +179,7 @@ macro_rules! virtual_layout {
             type PartialInit = $partial<T>;
         }
         impl<T: crate::view::collection::ViewCollection> $name<T> {
+            /// Created using macros
             pub fn new(init: $partial<T>)->Self{
                 Self {
                     $($field : init.$field.unwrap_or_default()),+,
