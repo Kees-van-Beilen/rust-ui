@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Wrapper around the native image view.
 
 /// An image handle points to an image. Images may be located on disk, bundled into the application or ar part of a global system image collection.

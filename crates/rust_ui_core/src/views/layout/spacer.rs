@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Spacers are an empty element that take as much space as possible
 use crate::layout::{ComputableLayout, Position, RenderObject, Size};
 

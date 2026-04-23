@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // The Calculator example.
 // This example shows how to make a minimal calculator app
 // You might notice that this example is missing some function that a normal pocket calculator has like:

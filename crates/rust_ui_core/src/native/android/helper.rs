@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::{ffi::CStr, marker::PhantomData, mem, ops::Deref, ptr::null_mut};
 
 use android2_android::view::View;

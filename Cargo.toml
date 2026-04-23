@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 [package]
 name = "rust-ui"
 version = "0.0.2"
@@ -85,9 +88,9 @@ path = "examples/macros/image.rs"
 crate-type = ["cdylib"]
 
 
-# [[example]]
-# name = "image"
-# path = "examples/macros/image.rs"
+[[example]]
+name = "all_features"
+path = "examples/all_features.rs"
 [[example]]
 name = "android_all_features"
 path = "examples/all_features.rs"

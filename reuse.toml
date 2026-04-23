@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+# SPDX-License-Identifier: MIT OR Apache-2.0
+version = 1
+
+# These files are generated
+[[annotations]]
+path = "crates/rust_ui_core/src/native/android/java/*.class"
+SPDX-FileCopyrightText = "2026 The rust-ui maintainers"
+SPDX-License-Identifier = "MIT OR Apache-2.0"
+
+[[annotations]]
+path = "Cargo.lock"
+SPDX-FileCopyrightText = "2026 The rust-ui maintainers"
+SPDX-License-Identifier = "MIT OR Apache-2.0"

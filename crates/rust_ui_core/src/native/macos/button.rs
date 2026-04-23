@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //custom button class
 use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained, sel};
 use objc2_app_kit::NSButton;

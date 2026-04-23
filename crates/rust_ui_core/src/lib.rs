@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
 
 #![warn(missing_docs)]
 #![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg")]

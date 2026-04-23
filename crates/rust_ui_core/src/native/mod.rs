@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 mod apple_shared;
 #[cfg(target_os = "ios")]

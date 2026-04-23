@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::{marker::PhantomData, mem, ops::Deref};
 
 use android2_android::view::{View, ViewGroup};

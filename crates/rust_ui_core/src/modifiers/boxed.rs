@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! this module contains the `.boxed()` modifier
 use crate::{layout::RenderObject, view::dyn_render::DynGroup};
 

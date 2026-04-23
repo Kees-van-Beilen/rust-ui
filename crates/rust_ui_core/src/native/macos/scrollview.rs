@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use objc2::{MainThreadMarker, rc::Retained};
 use objc2_app_kit::NSScrollerStyle;
 
