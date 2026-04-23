@@ -1,4 +1,7 @@
-
+<!--
+SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+SPDX-License-Identifier: MIT OR Apache-2.0
+-->
 <p align="center">
     <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg">

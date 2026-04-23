@@ -1,4 +1,9 @@
 #![warn(missing_docs)]
+
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Modifiers are views/virtual views that wrap around an actual view.
 //! Modifiers may change resource, introduce new views, or change layout.
 

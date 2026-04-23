@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::rc::Rc;
 
 use objc2::{DefinedClass, MainThreadMarker, MainThreadOnly, define_class, msg_send, rc::Retained};

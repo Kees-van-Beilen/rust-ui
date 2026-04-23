@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! A collection of text modifiers like `.foreground_color()`
 //! `.with_font_size()`
 //! `.with_font_weight()`

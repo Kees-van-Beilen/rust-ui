@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Wrapper around a native editable text
 use crate::view::state::{PartialAnyBinding, PartialBindingBox};
 

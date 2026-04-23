@@ -1,4 +1,9 @@
 #![warn(missing_docs)]
+
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Run tasks on a separate thread and let them sync back periodically with the main thread.
 
 use std::thread::{self, JoinHandle};

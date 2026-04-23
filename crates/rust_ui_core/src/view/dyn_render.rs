@@ -1,4 +1,9 @@
 #![warn(missing_docs)]
+
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Manage the type of view at runtime
 
 use clone_dyn::dependency::clone_dyn_meta;

@@ -1,4 +1,9 @@
 #![warn(missing_docs)]
+
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Manage storage between ui state changes.
 use std::{
     any::{Any, TypeId},

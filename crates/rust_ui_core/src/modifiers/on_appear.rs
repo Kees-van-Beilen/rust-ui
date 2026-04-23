@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! `.on_appear() || {}` modifier
 use std::cell::RefCell;
 use crate::layout::{ComputableLayout, RenderObject, Size};

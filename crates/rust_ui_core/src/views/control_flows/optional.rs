@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! this crate provides a view that may or may not exists. Mimicking the if-loop control flow
 //! This is currently removed.
 

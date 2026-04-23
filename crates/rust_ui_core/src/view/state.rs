@@ -1,4 +1,9 @@
 #![warn(missing_docs)]
+
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Manage view state
 
 use crate::view::mutable::MutableViewRerender;

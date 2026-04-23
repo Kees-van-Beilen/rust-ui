@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Build the java files inte dex classes
 export ANDROID_HOME="~/Library/Android/sdk"
 export ANDROID_NDK_ROOT="~/Library/Android/sdk/ndk/29.0.14206865"

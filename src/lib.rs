@@ -1,5 +1,10 @@
 #![warn(missing_docs)]
 #![doc(html_logo_url = "https://inpolen.nl/profiles/rust-ui/public/assets/ui-icon-dark.svg")]
+
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! <p align="center">
 //! <img src="https://inpolen.nl/profiles/rust-ui/public/assets/logo-dark.svg">
 //! </p>

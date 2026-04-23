@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026  The rust-ui maintainers
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This crate contains a utility macro to help with the creation of views, who's soul purpose is to layout it child views.
 use crate::layout::{ComputableLayout, Position, Size};
 
