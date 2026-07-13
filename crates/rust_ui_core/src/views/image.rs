@@ -4,6 +4,8 @@
 
 //! Wrapper around the native image view.
 
+use std::{borrow::Cow, ffi::CStr, path::{Path, PathBuf}, rc::Rc, sync::Arc};
+
 /// An image handle points to an image. Images may be located on disk, bundled into the application or ar part of a global system image collection.
 /// You should not construct [`crate::native::NativeImageHandle`] yourself.
 pub enum ImageHandle {
@@ -56,11 +58,32 @@ pub struct ImageView {
     pub(crate) scaling_mode: ImageScalingMode,
 }
 
+trait SealedToString: ToString {}
+impl SealedToString for &str {}
+impl SealedToString for &String {}
+impl SealedToString for String {}
+impl SealedToString for Rc<str> {}
+impl SealedToString for Arc<str> {}
+impl SealedToString for Box<str> {}
+impl<'a> SealedToString for Cow<'a,str> {}
+
+impl<T:SealedToString> From<T> for ImageHandle {
+    fn from(path: T) -> Self {
+        ImageHandle::Native(crate::native::NativeImageHandle::from_path(path))
+    }
+}
+
+impl<'a> From<&'a [u8]> for ImageHandle {
+    fn from(bytes: &'a [u8]) -> Self {
+        ImageHandle::Native(crate::native::NativeImageHandle::from_bytes(bytes))
+    }
+}
+
 impl ImageView {
     /// Construct an image view using the specified path.
-    pub fn new(path: impl ToString) -> Self {
+    pub fn new(handle: impl Into<ImageHandle>) -> Self {
         ImageView {
-            image_handle: ImageHandle::Native(crate::native::NativeImageHandle::from_path(path)),
+            image_handle: handle.into(),
             scaling_mode: ImageScalingMode::Fit,
         }
     }
