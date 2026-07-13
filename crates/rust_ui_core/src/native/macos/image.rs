@@ -23,6 +23,12 @@ impl NativeImageHandle {
             )
         }
     }
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        NativeImageHandle(objc2_app_kit::NSImage::initWithData(
+            objc2_app_kit::NSImage::alloc(),
+            &objc2_foundation::NSData::with_bytes(bytes)
+        ).unwrap())
+    }
 }
 
 pub struct ImageView {

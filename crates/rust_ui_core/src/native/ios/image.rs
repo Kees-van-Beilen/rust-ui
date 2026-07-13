@@ -24,6 +24,9 @@ impl NativeImageHandle {
             )
         }
     }
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        todo!()
+    }
 }
 
 pub struct ImageView {

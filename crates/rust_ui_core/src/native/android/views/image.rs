@@ -24,6 +24,11 @@ use crate::{
 pub struct NativeImageHandle(Retained<android2_android::graphics::Bitmap<'static>>);
 
 impl NativeImageHandle {
+
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        todo!()
+    }
+    
     pub fn from_path(path: impl ToString) -> Self {
         // let path = path.to_string();
         // let file_name = objc2_foundation::NSString::from_str(&path);
