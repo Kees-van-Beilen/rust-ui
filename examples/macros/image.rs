@@ -18,7 +18,7 @@ struct ImageDetailView {
                 ImageScalingMode::Fit => "Fit",
                 ImageScalingMode::Fill => "Fill",
             })
-            ImageView("cat.png")
+            ImageView("assets/demo/cat.png")
                 .set_scaling_mode(*mode)
                 .background {
                     ColorView(Color::BLACK)
