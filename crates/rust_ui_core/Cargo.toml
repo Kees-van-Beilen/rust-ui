@@ -15,7 +15,7 @@ syslog = "7.0.0"
 tuplex = "0.1.2"
 
 [target.'cfg(target_os = "android")'.dependencies]
-jni = "0.21.1"
+jni = "0.22.4"
 [target.'cfg(target_os = "android")'.dependencies.android2_android]
 git = "https://codeberg.org/kees-van-beilen/android2.git"
 rev = "5781948bc2"
